@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Forecast_Category_Closed_Mismatch</fullName>
+    <active>true</active>
+    <description>Closed Won/Lost opportunities must carry the Closed forecast category, keeping forecast buckets accurate.</description>
+    <errorConditionFormula>AND(IsClosed, NOT(ISPICKVAL(Forecast_Category__c, 'Closed')))</errorConditionFormula>
+    <errorDisplayField>Forecast_Category__c</errorDisplayField>
+    <errorMessage>A closed opportunity must use the Closed forecast category.</errorMessage>
+</ValidationRule>

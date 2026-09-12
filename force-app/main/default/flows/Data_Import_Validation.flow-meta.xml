@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>68.0</apiVersion>
+    <description>When a migration batch is created with a record count, marks it In Progress so the Data Migration report reflects live work.</description>
+    <interviewLabel>Data Import Validation {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Data Import Validation</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <decisions>
+        <name>HasRecordsToImport</name>
+        <label>Has Records To Import</label>
+        <locationX>300</locationX>
+        <locationY>200</locationY>
+        <defaultConnectorLabel>Default</defaultConnectorLabel>
+        <rules>
+            <name>RecordsPresent</name>
+            <label>Records Present</label>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Record_Count__c</leftValueReference>
+                <operator>GreaterThan</operator>
+                <rightValue>
+                    <numberValue>0</numberValue>
+                </rightValue>
+            </conditions>
+        </rules>
+    </decisions>
+    <getRecords>
+        <name>GetCurrentBatch</name>
+        <label>Get Current Batch</label>
+        <locationX>100</locationX>
+        <locationY>200</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <inputReference>$Record.Id</inputReference>
+        <object>Data_Migration_Batch__c</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </getRecords>
+    <recordUpdates>
+        <name>MarkBatchInProgress</name>
+        <label>Mark Batch In Progress</label>
+        <locationX>500</locationX>
+        <locationY>200</locationY>
+        <inputAssignments>
+            <field>Status__c</field>
+            <value>
+                <stringValue>In Progress</stringValue>
+            </value>
+        </inputAssignments>
+        <inputReference>GetCurrentBatch.Id</inputReference>
+        <object>Data_Migration_Batch__c</object>
+    </recordUpdates>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <recordTriggerType>AfterSave</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+</Flow>

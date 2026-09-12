@@ -1,0 +1,53 @@
+// ============================================
+// SOQL Practice Queries - Phase 7: Approvals & Legacy Automation
+// ============================================
+// Workflow rules & approval processes still power many orgs. Audit them here.
+
+// 1. Approval states of the Data Export Approval process
+SELECT Approval_Status__c, COUNT(Id) cases
+FROM Case
+GROUP BY Approval_Status__c
+
+// 2. Every case about to hit the Data Export Approval entry criteria
+SELECT CaseNumber, Subject, Priority, Data_Export_Requested__c, Approval_Status__c
+FROM Case
+WHERE Data_Export_Requested__c = true
+ORDER BY Data_Export_Requested__c DESC
+
+// 3. Records currently in an approval submission (ProcessInstanceWorkitem)
+SELECT Id, ProcessInstance.TargetObjectId, OriginalActorId, CreatedDate, StepStatus
+FROM ProcessInstanceWorkitem
+ORDER BY CreatedDate DESC
+LIMIT 20
+
+// 4. Complete approval history with outcome
+SELECT ProcessInstanceId, TargetObjectId, ActorId, CompletedDate, StepStatus, Comments
+FROM ProcessInstanceStep
+ORDER BY ProcessInstanceId DESC
+LIMIT 20
+
+// 5. Complexity smell: workflow rule email alerts (EntityDefinition cats)
+SELECT F.DeveloperName, F.TableEnumOrId, F.DataType
+FROM FieldDefinition F
+WHERE F.EntityDefinition.QualifiedApiName = 'Case'
+LIMIT 10
+
+// 6. Legacy automation survivor: count of tasks created by flows vs triggers
+SELECT Task_Type__c, Owner_Notification_Sent__c, COUNT(Id) n
+FROM Task
+WHERE Task_Category__c = 'Admin'
+GROUP BY Task_Type__c, Owner_Notification_Sent__c
+
+// 7. Which users are approvers (users with Manager set for hierarchy routing)
+SELECT Name, Manager.Name, Manager.ManagerId
+FROM User
+WHERE ManagerId != NULL
+ORDER BY Manager.Name
+LIMIT 25
+
+// 8. Approval backlog: pending submissions for High-priority cases
+SELECT TargetObject.Name, ProcessInstance.Status, ProcessInstance.SubmittedById
+FROM ProcessInstance
+WHERE Status = 'Pending' AND TargetObject.Type = 'Case'
+ORDER BY CompletedDate DESC
+LIMIT 15

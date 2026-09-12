@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>68.0</apiVersion>
+    <description>Marks a case as Pending when a data export is requested on a High-priority case, so the Data Export Approval process notices it.</description>
+    <interviewLabel>Data Export Approval Request {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Data Export Approval Request</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <decisions>
+        <name>ShouldRequestApproval</name>
+        <label>Should Request Approval</label>
+        <locationX>300</locationX>
+        <locationY>200</locationY>
+        <defaultConnectorLabel>Default</defaultConnectorLabel>
+        <rules>
+            <name>ExportRequested</name>
+            <label>Export Requested</label>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Data_Export_Requested__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>Priority</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>High</stringValue>
+                </rightValue>
+            </conditions>
+        </rules>
+    </decisions>
+    <getRecords>
+        <name>GetCurrentCase</name>
+        <label>Get Current Case</label>
+        <locationX>100</locationX>
+        <locationY>200</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <inputReference>$Record.Id</inputReference>
+        <object>Case</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </getRecords>
+    <recordUpdates>
+        <name>SetApprovalPending</name>
+        <label>Set Approval Pending</label>
+        <locationX>500</locationX>
+        <locationY>200</locationY>
+        <inputAssignments>
+            <field>Approval_Status__c</field>
+            <value>
+                <stringValue>Pending</stringValue>
+            </value>
+        </inputAssignments>
+        <inputReference>GetCurrentCase.Id</inputReference>
+        <object>Case</object>
+    </recordUpdates>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <recordTriggerType>AfterSave</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+</Flow>

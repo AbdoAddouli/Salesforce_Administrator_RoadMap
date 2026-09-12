@@ -1,0 +1,64 @@
+// ============================================
+// SOQL Practice Queries - Phase 4: User Management & Org Setup
+// ============================================
+
+// 1. Org health: active users by profile
+SELECT Profile.Name, COUNT(Id) userCount
+FROM User
+WHERE IsActive = true
+GROUP BY Profile.Name
+ORDER BY userCount DESC
+
+// 2. Onboarding pipeline: who still needs onboarding
+SELECT Name, Admin_Role__c, Onboarding_Status__c, Onboarding_Date__c
+FROM User
+WHERE IsActive = true AND Onboarding_Status__c != 'Complete'
+ORDER BY Onboarding_Status__c
+
+// 3. Licenses in play (UserLicenseGroup / UserLicense)
+SELECT Name, TotalLicenses, UsedLicenses
+FROM UserLicense
+ORDER BY TotalLicenses DESC
+
+// 4. Permission set counts per user (catch the zero-assignment stragglers)
+SELECT AssigneeId, Assignee.Name, COUNT(Id) psCount
+FROM PermissionSetAssignment
+GROUP BY AssigneeId, Assignee.Name
+HAVING COUNT(Id) < 2
+ORDER BY Assignee.Name
+
+// 5. Tasks about to blow their due dates (admin task board)
+SELECT Name, Task_Type__c, Priority__c, Status__c, Due_Date__c, Task_Owner__c
+FROM Admin_Task__c
+WHERE Status__c != 'Completed' AND Due_Date__c <= NEXT_N_DAYS:7
+ORDER BY Priority__c
+
+// 6. Public groups / queues used by assignment rules
+SELECT Name, Type, Related.Name
+FROM Group
+WHERE Type = 'Queue'
+ORDER BY Name
+
+// 7. Login frequency per user (performance + risk baseline)
+SELECT UserId, Users.Name, COUNT(Id) logins
+FROM LoginHistory
+WHERE LoginTime = THIS_MONTH
+GROUP BY UserId, Users.Name
+ORDER BY logins DESC
+LIMIT 10
+
+// 8. Users with feature licenses they may not own
+SELECT Name, Feature_License_Missing__c, UserPermissionsCustomerPortalUser, UserPermissionsMarketingUser
+FROM User
+WHERE IsActive = true
+
+// 9. Companion: role hierarchy top-down
+SELECT Name, ParentRole.Name
+FROM UserRole
+ORDER BY ParentRole.Name
+
+// 10. Deadline math: study plans about to collide with target dates
+SELECT Name, Learner__c, Certification__c, Status__c, Target_Date__c, Hours_Per_Week__c
+FROM Study_Plan__c
+WHERE Target_Date__c <= NEXT_90_DAYS
+ORDER BY Target_Date__c

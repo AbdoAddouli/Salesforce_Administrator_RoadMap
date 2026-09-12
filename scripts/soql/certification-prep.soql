@@ -1,0 +1,52 @@
+// ============================================
+// SOQL Practice Queries - Phase 12: Certification Prep
+// ============================================
+// The exam-in-SOQL chapter: query your question bank and study plans
+// the way the real quiz engine (CertificationPrepService) does.
+
+// 1. The full question bank with answers (close this window for the exam!)
+SELECT Training_Question_Number__c, Question_Text__c, Option_A__c, Option_B__c,
+       Option_C__c, Option_D__c, Correct_Answer__c, Topic__c, Difficulty__c
+FROM Training_Question__c
+ORDER BY Topic__c
+
+// 2. Coverage by blueprint domain (the #1 readiness metric)
+SELECT Topic__c, COUNT(Id) questions
+FROM Training_Question__c
+GROUP BY Topic__c
+ORDER BY questions DESC
+
+// 3. Difficulty mix - do you have enough Hard questions?
+SELECT Difficulty__c, COUNT(Id) questions
+FROM Training_Question__c
+GROUP BY Difficulty__c
+
+// 4. Weakest subject: the topic with the lowest average question count
+SELECT Topic__c, COUNT(Correct_Answer__c) answered
+FROM Training_Question__c
+GROUP BY Topic__c
+HAVING COUNT(Id) < 5
+ORDER BY answered
+
+// 5. Study population: all active plans and their pacing
+SELECT Name, Learner__r.Name, Certification__c, Status__c, Target_Date__c,
+       Hours_Per_Week__c, Completed_Domains__c
+FROM Study_Plan__c
+ORDER BY Target_Date__c
+
+// 6. Ready today? plans due within 14 days
+SELECT Name, Status__c, Target_Date__c, Hours_Per_Week__c
+FROM Study_Plan__c
+WHERE Target_Date__c <= NEXT_14_DAYS
+ORDER BY Target_Date__c
+
+// 7. Mock-quiz scoring replay: how CertificationPrepService reads the bank
+SELECT Topic__c, COUNT(Id) n,
+       SUM(CASE WHEN Correct_Answer__c = 'A' THEN 1 ELSE 0 END) answerA
+FROM Training_Question__c
+GROUP BY Topic__c
+
+// 8. Exam-day checkbox: every domain present (the six blueprint pillars)
+SELECT DISTINCT Topic__c
+FROM Training_Question__c
+ORDER BY Topic__c

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Org-wide admin guardrails read at runtime by the service layer: login audit, alerts and retention limits.</description>
+    <label>Admin Configuration</label>
+    <pluralLabel>Admin Configurations</pluralLabel>
+</CustomObject>

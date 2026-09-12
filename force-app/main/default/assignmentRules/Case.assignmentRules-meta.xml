@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AssignmentRules xmlns="http://soap.sforce.com/2006/04/metadata">
+    <assignmentRules>
+        <fullName>Case Assignment Rules</fullName>
+        <label>Case Assignment Rules</label>
+        <rule>
+            <fullName>Case Queue Routing</fullName>
+            <active>true</active>
+            <booleanFilter>1 OR 2</booleanFilter>
+            <label>Case Queue Routing</label>
+            <ruleEntry>
+                <fullName>High Priority Cases</fullName>
+                <ascendingOrDescending>Asc</ascendingOrDescending>
+                <criteriaItems>
+                    <field>Priority</field>
+                    <operation>equals</operation>
+                    <value>High</value>
+                </criteriaItems>
+                <enabled>true</enabled>
+                <preferBlankOrNotFound>false</preferBlankOrNotFound>
+                <assignedTo>High Priority Case Queue</assignedTo>
+                <assignedToType>Queue</assignedToType>
+            </ruleEntry>
+            <ruleEntry>
+                <fullName>Standard Cases</fullName>
+                <ascendingOrDescending>Asc</ascendingOrDescending>
+                <criteriaItems>
+                    <field>Priority</field>
+                    <operation>equalsNeither</operation>
+                    <value>High</value>
+                </criteriaItems>
+                <enabled>true</enabled>
+                <preferBlankOrNotFound>false</preferBlankOrNotFound>
+                <assignedTo>Standard Case Queue</assignedTo>
+                <assignedToType>Queue</assignedToType>
+            </ruleEntry>
+        </rule>
+    </assignmentRules>
+</AssignmentRules>

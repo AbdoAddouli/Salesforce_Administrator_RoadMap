@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>User_Security_Review_Report</fullName>
+    <label>User Security Review Report</label>
+    <folder>Admin_Reports</folder>
+    <reportFormat>tabular</reportFormat>
+    <reportType>User</reportType>
+    <columns>
+        <name>Name</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Admin_Role__c</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>LastLoginDate</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Is_Deactivation_Candidate__c</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Onboarding_Status__c</name>
+        <type>detail</type>
+    </columns>
+</Report>

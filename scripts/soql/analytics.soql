@@ -1,0 +1,61 @@
+// ============================================
+// SOQL Practice Queries - Phase 10: Analytics
+// ============================================
+// The "reports in SOQL" chapter - every dashboard at the end of the roadmap.
+
+// 1. The dashboard one-liner: pipeline by stage
+SELECT StageName, SUM(Amount) total, COUNT(Id) deals
+FROM Opportunity
+WHERE IsClosed = false
+GROUP BY StageName
+ORDER BY total DESC
+
+// 2. Weighted forecast makeup
+SELECT Forecast_Category__c, SUM(Weighted_Expected_Revenue__c) weighted,
+       SUM(Amount) raw
+FROM Opportunity
+WHERE IsClosed = false AND Forecast_Category__c != NULL
+GROUP BY Forecast_Category__c
+
+// 3. Win rate by owner (operational KPI)
+SELECT Owner.Name, COUNT(Id) opps,
+       SUM(CASE WHEN IsWon = true THEN 1 ELSE 0 END) wins
+FROM Opportunity
+GROUP BY Owner.Name
+ORDER BY wins DESC NULLS LAST
+LIMIT 10
+
+// 4. Case volume trend by month (Date math in GROUP BY)
+SELECT CALENDAR_YEAR(CreatedDate) yr, CALENDAR_MONTH(CreatedDate) mon, COUNT(Id) n
+FROM Case
+WHERE CreatedDate = LAST_N_MONTHS:6
+GROUP BY CALENDAR_YEAR(CreatedDate), CALENDAR_MONTH(CreatedDate)
+ORDER BY yr, mon
+
+// 5. Study-plan readiness distribution for the academy dashboard
+SELECT Status__c, COUNT(Id) plans, SUM(Hours_Per_Week__c) plannedHours
+FROM Study_Plan__c
+GROUP BY Status__c
+
+// 6. Quiz bank coverage by domain (exam blueprint parity)
+SELECT Topic__c, Difficulty__c, COUNT(Id) questions
+FROM Training_Question__c
+GROUP BY Topic__c, Difficulty__c
+ORDER BY Topic__c
+
+// 7. Data-quality bucket histogram (felt in every demo)
+SELECT Validation_Status__c, AVG(Data_Quality_Score__c) avgScore, COUNT(Id) accounts
+FROM Account
+GROUP BY Validation_Status__c
+
+// 8. ROLLUP: totals column included for the finance learner
+SELECT Status__c, SUM(Record_Count__c) records
+FROM Data_Migration_Batch__c
+GROUP BY ROLLUP(Status__c)
+
+// 9. Speed check for the report builder: index-friendly walk of the large table
+SELECT Id, Name, CreatedDate
+FROM Case
+WHERE CreatedDate >= LAST_90_DAYS
+ORDER BY CreatedDate DESC
+LIMIT 200

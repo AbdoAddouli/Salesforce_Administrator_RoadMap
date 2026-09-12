@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Dashboard xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Certification_Progress_Dashboard</fullName>
+    <label>Certification Progress Dashboard</label>
+    <folder>Admin_Dashboards</folder>
+    <runningUserId>005000000000001</runningUserId>
+    <status>draft</status>
+    <components>
+        <components>
+            <chartType>metric</chartType>
+            <autorefresh>300</autorefresh>
+            <name>Study Plans On Track</name>
+            <title>Study Plans On Track</title>
+            <componentType>chart</componentType>
+            <filter>Status__c = 'On Track'</filter>
+        </components>
+        <components>
+            <chartType>metric</chartType>
+            <autorefresh>300</autorefresh>
+            <name>Learners Ready</name>
+            <title>Learners Ready</title>
+            <componentType>chart</componentType>
+            <filter>Status__c = 'Ready'</filter>
+        </components>
+        <components>
+            <chartType>bar</chartType>
+            <autorefresh>300</autorefresh>
+            <name>Questions by Topic</name>
+            <title>Questions by Topic</title>
+            <componentType>chart</componentType>
+            <filter>Topic__c != null</filter>
+        </components>
+    </components>
+</Dashboard>

@@ -1,0 +1,59 @@
+// ============================================
+// SOQL Practice Queries - Phase 8: Sales & Marketing Apps
+// ============================================
+// Sales Cloud & Marketing Cloud admin: trust pipelines, that answer you read
+// in the quiz, and the conversion numbers that prove it.
+
+// 1. Pipeline freshness: active deals by stage
+SELECT StageName, COUNT(Id) deals, SUM(Amount) amount
+FROM Opportunity
+WHERE IsClosed = false
+GROUP BY StageName
+ORDER BY amount DESC
+
+// 2. Forecast story: categories and weighted revenue
+SELECT Forecast_Category__c, COUNT(Id) n, SUM(Weighted_Expected_Revenue__c) weighted
+FROM Opportunity
+WHERE IsClosed = false
+GROUP BY Forecast_Category__c
+
+// 3. Win reasons - what actually closes deals
+SELECT Won_Reason__c, COUNT(Id) wins
+FROM Opportunity
+WHERE IsWon = true AND Won_Reason__c != NULL
+GROUP BY Won_Reason__c
+ORDER BY wins DESC
+
+// 4. Deal health & competitor pressure on open pipeline
+SELECT Deal_Health__c, Competitor__c, COUNT(Id) n
+FROM Opportunity
+WHERE IsClosed = false
+GROUP BY Deal_Health__c, Competitor__c
+ORDER BY n DESC
+
+// 5. Lead funnel sanity check
+SELECT Status, COUNT(Id) leads
+FROM Lead
+GROUP BY Status
+ORDER BY leads DESC
+
+// 6. Campaign ROI once members got attributed
+SELECT cm.CampaignId, cm.Campaign.Name, COUNT(cm.Id) members,
+       SUM(cm.Opportunity.Amount) attributedRevenue
+FROM CampaignMember cm
+WHERE cm.Status = 'Responded'
+GROUP BY cm.CampaignId, cm.Campaign.Name
+ORDER BY attributedRevenue DESC NULLS LAST
+LIMIT 10
+
+// 7. Conversion: converted leads this quarter
+SELECT COUNT(Id) converted, COUNT(DISTINCT ConvertedOpportunityId) withOpp
+FROM Lead
+WHERE IsConverted = true AND ConvertedDate = THIS_QUARTER
+
+// 8. Marketing source audit for imports
+SELECT Campaign_Source__c, COUNT(Id) leads
+FROM Lead
+GROUP BY Campaign_Source__c
+ORDER BY leads DESC NULLS LAST
+LIMIT 10

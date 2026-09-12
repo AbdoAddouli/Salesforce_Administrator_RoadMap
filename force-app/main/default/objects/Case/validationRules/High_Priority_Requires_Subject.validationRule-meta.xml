@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>High_Priority_Requires_Subject</fullName>
+    <active>true</active>
+    <description>Prevents high-priority cases from being created without a clear subject that queue routing can inspect.</description>
+    <errorConditionFormula>AND(ISPICKVAL(Priority, 'High'), ISBLANK(Subject))</errorConditionFormula>
+    <errorDisplayField>Subject</errorDisplayField>
+    <errorMessage>High-priority cases must include a subject so the queue routing rules can dispatch them.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>68.0</apiVersion>
+    <description>Creates a follow-up review task when a case escalates past level 1, keeping the support ops board populated.</description>
+    <interviewLabel>Case Escalation Task {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Case Escalation Task</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <decisions>
+        <name>IsEscalated</name>
+        <label>Is Escalated</label>
+        <locationX>300</locationX>
+        <locationY>200</locationY>
+        <defaultConnectorLabel>Default</defaultConnectorLabel>
+        <rules>
+            <name>PastLevelOne</name>
+            <label>Past Level One</label>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Escalation_Level__c</leftValueReference>
+                <operator>GreaterThan</operator>
+                <rightValue>
+                    <numberValue>1</numberValue>
+                </rightValue>
+            </conditions>
+        </rules>
+    </decisions>
+    <recordCreates>
+        <name>CreateEscalationTask</name>
+        <label>Create Escalation Task</label>
+        <locationX>500</locationX>
+        <locationY>200</locationY>
+        <inputAssignments>
+            <field>Name</field>
+            <value>
+                <stringValue>Review Escalated Case</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Task_Type__c</field>
+            <value>
+                <stringValue>Security Review</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Priority__c</field>
+            <value>
+                <stringValue>High</stringValue>
+            </value>
+        </inputAssignments>
+        <object>Admin_Task__c</object>
+    </recordCreates>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <recordTriggerType>AfterSave</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+</Flow>

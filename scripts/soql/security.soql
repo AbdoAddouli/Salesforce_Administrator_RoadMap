@@ -1,0 +1,64 @@
+// ============================================
+// SOQL Practice Queries - Phase 3: Security Model
+// ============================================
+// Login Activity records and PermissionSetAssignment are read-only -
+// perfect for audits, impossible to hack in a query.
+
+// 1. Users that are deactivation candidates right now
+SELECT Name, IsActive, LastLoginDate, Is_Deactivation_Candidate__c, Requires_Login_Review__c
+FROM User
+WHERE Is_Deactivation_Candidate__c = true
+
+// 2. Active users that never logged in (break-in risk / stale account)
+SELECT Name, Email, Profile.Name, Version.LicenseString licenseName
+FROM User
+WHERE IsActive = true AND LastLoginDate = NULL
+ORDER BY Name
+LIMIT 25
+
+// 3. Login history: who logged in from an unusual place (all fields)
+SELECT Id, LoginTime, Application, SourceIp, LogoutTime
+FROM LoginHistory
+WHERE LoginTime = LAST_N_DAYS:7
+ORDER BY LoginTime DESC
+LIMIT 25
+
+// 4. Heavy hitters: authorized session access by user
+SELECT UserId, Users.Name, COUNT(Id) accessCount
+FROM AuthSession
+GROUP BY UserId, Users.Name
+ORDER BY accessCount DESC
+LIMIT 10
+
+// 5. Permission set coverage: every assignment in the org
+SELECT AssigneeId, Assignee.Username, PermissionSet.Name, PermissionSet.Profile.Name
+FROM PermissionSetAssignment
+ORDER BY Assignee.Username
+LIMIT 50
+
+// 6. Open security findings we still owe
+SELECT Name, Audit_Type__c, Risk_Level__c, Status__c, User_Assessed__c
+FROM Security_Audit__c
+WHERE Status__c != 'Resolved'
+ORDER BY Risk_Level__c DESC
+
+// 7. Sensitive records: accounts flagged with sensitive data
+SELECT Name, Sensitive_Data__c, Data_Processed_EU__c, Data_Confidence__c
+FROM Account
+WHERE Sensitive_Data__c = true
+
+// 8. User fields audit: suspension flags set anywhere
+SELECT Name, Access_Level__c, Feature_License_Missing__c
+FROM User
+WHERE Feature_License_Missing__c = true OR Access_Level__c = 'Read Only'
+
+// 9. Who modified permissions recently (SetupAuditTrail)
+SELECT Id, CreatedDate, CreatedBy.Name, Section, Action
+FROM SetupAuditTrail
+WHERE Section = 'ManageUsers' OR Section = 'Security'
+ORDER BY CreatedDate DESC
+LIMIT 20
+
+// 10. OWD review helper: org-wide read levels would appear in Metadata API,
+//     but you can still audit who sees what via sharing on custom objects:
+SELECT Name, ShareRowCause FROM Data_Migration_Batch__Share LIMIT 20

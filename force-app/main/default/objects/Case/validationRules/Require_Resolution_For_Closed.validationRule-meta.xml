@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Require_Resolution_For_Closed</fullName>
+    <active>true</active>
+    <description>Support hygiene rule: a closed case must record its resolution for knowledge reuse and audits.</description>
+    <errorConditionFormula>AND(IsClosed, OR(ISBLANK(Resolution), LEN(TRIM(Resolution)) = 0))</errorConditionFormula>
+    <errorDisplayField>Resolution</errorDisplayField>
+    <errorMessage>Closed cases must include a Resolution so the outcome can be reused and audited.</errorMessage>
+</ValidationRule>

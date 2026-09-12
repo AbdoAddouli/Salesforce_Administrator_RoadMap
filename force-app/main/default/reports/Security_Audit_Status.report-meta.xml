@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Security_Audit_Status</fullName>
+    <label>Security Audit Status</label>
+    <folder>Admin_Reports</folder>
+    <reportFormat>summary</reportFormat>
+    <reportType>Security_Audit__c</reportType>
+    <columns>
+        <name>Status__c</name>
+        <type>summary</type>
+        <function>grouping</function>
+    </columns>
+    <columns>
+        <name>Name</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Audit_Type__c</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Risk_Level__c</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Audit_Date__c</name>
+        <type>detail</type>
+    </columns>
+</Report>

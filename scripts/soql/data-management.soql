@@ -1,0 +1,66 @@
+// ============================================
+// SOQL Practice Queries - Phase 5: Data Management
+// ============================================
+// The move: normalize -> score -> flag. These queries find the mess
+// that DataManagementService and the Data Quality dashboard surface.
+
+// 1. Duplicates: same-name accounts (normalize with LOWER)
+SELECT LOWER(TRIM(Name)) normalizedName, COUNT(Id) occur
+FROM Account
+GROUP BY LOWER(TRIM(Name))
+HAVING COUNT(Id) > 1
+
+// 2. The actual duplicate rows to merge
+SELECT Name, Site, Data_Quality_Score__c, Duplicate_Flag__c, CreatedDate
+FROM Account
+WHERE Name LIKE '%%' AND Duplicate_Flag__c = true
+ORDER BY Name
+
+// 3. Phone overlap (second classic duplicate signal)
+SELECT Phone, COUNT(Id) dupes
+FROM Contact
+GROUP BY Phone
+HAVING COUNT(Id) > 1 AND Phone != NULL
+
+// 4. Inbound migration batch footprint
+SELECT Name, Source_Object__c, Status__c, Record_Count__c,
+       Successful_Records__c, Failed_Records__c
+FROM Data_Migration_Batch__c
+ORDER BY CreatedDate DESC
+LIMIT 10
+
+// 5. Merge candidate match: same Import_Batch_Number reruns
+SELECT Import_Batch_Number__c, COUNT(Id) runs
+FROM Account
+WHERE Import_Batch_Number__c != NULL
+GROUP BY Import_Batch_Number__c
+HAVING COUNT(Id) > 1
+
+// 6. Records missing mandatory business fields (validation-driven)
+SELECT Name, Website, BillingState, Data_Quality_Score__c
+FROM Account
+WHERE Website = NULL OR BillingState = NULL
+LIMIT 25
+
+// 7. Stale leads nobody touched in 90 days
+SELECT Name, Company, OwnerId, CreatedDate, Lead_Status_Reason__c
+FROM Lead
+WHERE IsConverted = false AND LastModifiedDate <= LAST_90_DAYS
+ORDER BY LastModifiedDate
+
+// 8. Consent tracking for GDPR audit
+SELECT Name, Consent_To_Process__c, Consent_Date__c, Account.Data_Processed_EU__c
+FROM Contact
+ORDER BY Consent_Date__c DESC NULLS LAST
+LIMIT 20
+
+// 9. Deleted record analysis hint (Developer Console > Recycle Bin,
+//    plus this query for the live side): orphaned opportunities by stage
+SELECT Status__c, COUNT(Id) batches FROM Data_Migration_Batch__c GROUP BY Status__c
+
+// 10. Data-quality score histogram
+SELECT FLOOR(Data_Quality_Score__c / 10) * 10 bucket, COUNT(Id) n
+FROM Account
+WHERE Data_Quality_Score__c != NULL
+GROUP BY FLOOR(Data_Quality_Score__c / 10) * 10
+ORDER BY bucket

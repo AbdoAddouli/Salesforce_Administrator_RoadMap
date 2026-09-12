@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Data_Quality_Score_Report</fullName>
+    <label>Data Quality Score Report</label>
+    <folder>Admin_Reports</folder>
+    <reportFormat>summary</reportFormat>
+    <reportType>Account</reportType>
+    <columns>
+        <name>Validation_Status__c</name>
+        <type>summary</type>
+        <function>grouping</function>
+    </columns>
+    <columns>
+        <name>Name</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Data_Quality_Score__c</name>
+        <type>summary</type>
+        <function>avg</function>
+    </columns>
+    <columns>
+        <name>Record_Source__c</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Last_Data_Audit__c</name>
+        <type>detail</type>
+    </columns>
+</Report>

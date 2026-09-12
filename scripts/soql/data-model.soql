@@ -1,0 +1,60 @@
+// ============================================
+// SOQL Practice Queries - Phase 2: Object Manager & Data Model
+// ============================================
+// Remember: query only the fields your report or flow actually needs.
+
+// 1. Data quality: accounts sorted worst-first
+SELECT Name, Data_Quality_Score__c, Validation_Status__c, Import_Batch_Number__c
+FROM Account
+WHERE Data_Quality_Score__c < 80
+ORDER BY Data_Quality_Score__c ASC
+
+// 2. Lookup walk: contacts and every account field important for GDPR
+SELECT Name, Email, Consent_To_Process__c, Consent_Date__c, Account.Name,
+       Account.Data_Processed_EU__c
+FROM Contact
+ORDER BY Account.Name
+
+// 3. Missing critical data: contacts without email or phone
+SELECT Name, Account.Name, Email, Phone
+FROM Contact
+WHERE Email = NULL AND Phone = NULL
+LIMIT 20
+
+// 4. Fields most people forget on leads
+SELECT Name, Company, Data_Entry_Complete__c, Consent_Given__c, Market__c
+FROM Lead
+WHERE Data_Entry_Complete__c = false
+LIMIT 20
+
+// 5. Cross-object scenario: opportunities missing a competitor (weak pipeline)
+SELECT Name, StageName, Amount, Competitor__c, Deal_Health__c
+FROM Opportunity
+WHERE IsClosed = false AND Competitor__c = NULL
+ORDER BY Amount DESC
+
+// 6. Child relationship query: accounts with their flagged duplicates
+SELECT Name, (SELECT Id, Name, Validation_Status__c FROM Opportunities)
+FROM Account
+WHERE Duplicate_Flag__c = true
+LIMIT 10
+
+// 7. Formula field check: weighted revenue on the board
+SELECT Name, Amount, Probability, Weighted_Expected_Revenue__c
+FROM Opportunity
+WHERE IsClosed = false
+ORDER BY Weighted_Expected_Revenue__c DESC
+LIMIT 10
+
+// 8. Aggregate: populated vs missing in one GROUP BY split
+SELECT Validation_Status__c, COUNT(Name) records
+FROM Account
+GROUP BY Validation_Status__c
+
+// 9. Filter by Date field: accounts never audited recently
+SELECT Name, Last_Data_Audit__c, Data_Quality_Score__c
+FROM Account
+WHERE Last_Data_Audit__c = NULL OR Last_Data_Audit__c = LAST_N_DAYS:90
+
+// 10. Dynamic object exploration (Developer Console only)
+SELECT Id FROM Training_Question__c WHERE Topic__c = 'Configuration and Setup'

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Prevent_Future_Due_On_Completion</fullName>
+    <active>true</active>
+    <description>Stops users marking a task closed while its due date is still in the future - the deadline was never met.</description>
+    <errorConditionFormula>AND(NOT(ISNEW()), IsClosed, ActivityDate &gt; TODAY())</errorConditionFormula>
+    <errorDisplayField>ActivityDate</errorDisplayField>
+    <errorMessage>A task with a future due date cannot be completed yet. Move the due date before closing it.</errorMessage>
+</ValidationRule>

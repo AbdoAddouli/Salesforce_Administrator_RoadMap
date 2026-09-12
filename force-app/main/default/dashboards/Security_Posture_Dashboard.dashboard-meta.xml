@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Dashboard xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Security_Posture_Dashboard</fullName>
+    <label>Security Posture Dashboard</label>
+    <folder>Admin_Dashboards</folder>
+    <runningUserId>005000000000001</runningUserId>
+    <status>draft</status>
+    <components>
+        <components>
+            <chartType>metric</chartType>
+            <autorefresh>300</autorefresh>
+            <name>High Risk Findings</name>
+            <title>High Risk Findings</title>
+            <componentType>chart</componentType>
+            <filter>Risk_Level__c = 'High' AND Status__c != 'Resolved'</filter>
+        </components>
+        <components>
+            <chartType>metric</chartType>
+            <autorefresh>300</autorefresh>
+            <name>Users Needing Review</name>
+            <title>Users Needing Review</title>
+            <componentType>chart</componentType>
+            <filter>Requires_Login_Review__c = TRUE</filter>
+        </components>
+        <components>
+            <chartType>bar</chartType>
+            <autorefresh>300</autorefresh>
+            <name>Audits by Type</name>
+            <title>Audits by Type</title>
+            <componentType>chart</componentType>
+            <filter>Audit_Type__c != null</filter>
+        </components>
+    </components>
+</Dashboard>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>68.0</apiVersion>
+    <description>Creates the standard admin onboarding checklist when a new user is inserted. Points to Admin_Task__c via $Record.Id so the assignments are owned by the new hire.</description>
+    <interviewLabel>New User Onboarding Tasks {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>New User Onboarding Tasks</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordCreates>
+        <name>CreateProfileReviewTask</name>
+        <label>Create Profile Review Task</label>
+        <locationX>100</locationX>
+        <locationY>200</locationY>
+        <inputAssignments>
+            <field>Name</field>
+            <value>
+                <stringValue>Profile and License Review</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Task_Type__c</field>
+            <value>
+                <stringValue>Security Review</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Task_Owner__c</field>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Admin_Task__c</object>
+    </recordCreates>
+    <recordCreates>
+        <name>CreatePermissionSetTask</name>
+        <label>Create Permission Set Task</label>
+        <locationX>260</locationX>
+        <locationY>200</locationY>
+        <inputAssignments>
+            <field>Name</field>
+            <value>
+                <stringValue>Verify Permission Sets</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Task_Owner__c</field>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Admin_Task__c</object>
+    </recordCreates>
+    <recordCreates>
+        <name>CreateOwnershipTask</name>
+        <label>Create Ownership Task</label>
+        <locationX>420</locationX>
+        <locationY>200</locationY>
+        <inputAssignments>
+            <field>Name</field>
+            <value>
+                <stringValue>Record Ownership Handoff</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Task_Owner__c</field>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Admin_Task__c</object>
+    </recordCreates>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <recordTriggerType>AfterSave</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+</Flow>

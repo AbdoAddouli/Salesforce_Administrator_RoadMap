@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Training_Question_Coverage</fullName>
+    <label>Training Question Coverage</label>
+    <folder>Admin_Reports</folder>
+    <reportFormat>summary</reportFormat>
+    <reportType>Training_Question__c</reportType>
+    <columns>
+        <name>Topic__c</name>
+        <type>summary</type>
+        <function>grouping</function>
+    </columns>
+    <columns>
+        <name>Difficulty__c</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Question_Text__c</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Training_Question_Number__c</name>
+        <type>detail</type>
+    </columns>
+</Report>

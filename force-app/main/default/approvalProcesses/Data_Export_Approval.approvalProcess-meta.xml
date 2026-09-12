@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ApprovalProcess xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Data_Export_Approval</fullName>
+    <active>true</active>
+    <allowRecall>true</allowRecall>
+    <label>Data Export Approval</label>
+    <showErrorOnFailure>true</showErrorOnFailure>
+    <version>1</version>
+    <approvalPageReferences>
+        <name>standard__approvalpage</name>
+    </approvalPageReferences>
+    <entryCriteria>
+        <booleanFilter>1 AND 2</booleanFilter>
+        <criteriaItems>
+            <field>Data_Export_Requested__c</field>
+            <operation>equals</operation>
+            <value>true</value>
+        </criteriaItems>
+        <criteriaItems>
+            <field>Priority</field>
+            <operation>equals</operation>
+            <value>High</value>
+        </criteriaItems>
+    </entryCriteria>
+    <approvalStep>
+        <name>Step_1_Security_Admin</name>
+        <label>Security Admin Approval</label>
+        <approvalStepRequests>
+            <approvalType>staticResource</approvalType>
+            <label>Security Admin</label>
+            <name>Security_Admin</name>
+            <replaceAllFields>true</replaceAllFields>
+            <approver>
+                <hierarchy>ManagerOfRecordOwner</hierarchy>
+            </approver>
+        </approvalStepRequests>
+        <approvalStepRequests>
+            <approvalType>staticResource</approvalType>
+            <label>Security Admin</label>
+            <name>Security_Admin</name>
+            <replaceAllFields>true</replaceAllFields>
+            <approver>
+                <user>HierarchyToRecordOwner</user>
+            </approver>
+        </approvalStepRequests>
+    </approvalStep>
+    <finalApprovalActions>
+        <name>Mark_Approved</name>
+        <type>FieldUpdate</type>
+        <fieldUpdate>
+            <name>Mark_Approved</name>
+            <field>Approval_Status__c</field>
+            <literalValue>Approved</literalValue>
+            <notifyAssignee>false</notifyAssignee>
+            <operation>Literal</operation>
+            <sendEmail>false</sendEmail>
+        </fieldUpdate>
+    </finalApprovalActions>
+    <finalRejectionActions>
+        <name>Mark_Rejected</name>
+        <type>FieldUpdate</type>
+        <fieldUpdate>
+            <name>Mark_Rejected</name>
+            <field>Approval_Status__c</field>
+            <literalValue>Rejected</literalValue>
+            <notifyAssignee>false</notifyAssignee>
+            <operation>Literal</operation>
+            <sendEmail>false</sendEmail>
+        </fieldUpdate>
+    </finalRejectionActions>
+    <recallActions>
+        <name>Mark_Draft</name>
+        <type>FieldUpdate</type>
+        <fieldUpdate>
+            <name>Mark_Draft</name>
+            <field>Approval_Status__c</field>
+            <literalValue>Draft</literalValue>
+            <notifyAssignee>false</notifyAssignee>
+            <operation>Literal</operation>
+            <sendEmail>false</sendEmail>
+        </fieldUpdate>
+    </recallActions>
+</ApprovalProcess>

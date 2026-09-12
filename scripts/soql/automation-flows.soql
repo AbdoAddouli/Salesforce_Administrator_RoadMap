@@ -1,0 +1,57 @@
+// ============================================
+// SOQL Practice Queries - Phase 6: Automation (Flows)
+// ============================================
+// Flows do the clicking; SOQL does the inspecting before you build.
+
+// 1. Objects with no open automation debt: tasks by status
+SELECT Status__c, COUNT(Name) tasks
+FROM Admin_Task__c
+GROUP BY Status__c
+
+// 2. Everything the onboarding flow created (follow the data)
+SELECT Name, Task_Type__c, Status__c, Due_Date__c, Task_Owner__c, CreatedDate
+FROM Admin_Task__c
+WHERE Name LIKE 'Profile%' OR Name LIKE 'Verify%' OR Name LIKE 'Record%'
+ORDER BY CreatedDate DESC
+
+// 3. Escalation risk: cases that jumped past level 1
+SELECT CaseNumber, Subject, Escalation_Level__c, Priority, Status
+FROM Case
+WHERE Escalation_Level__c > 1
+ORDER BY Escalation_Level__c DESC
+
+// 4. Flow-driven follow-ups: sensitive data review tasks pending
+SELECT Name, Task_Type__c, Priority__c, Status__c, Due_Date__c
+FROM Admin_Task__c
+WHERE Task_Type__c = 'Security Review' AND Status__c != 'Completed'
+
+// 5. Scheduled flow blast radius: users who never converted after onboarding
+SELECT Name, Onboarding_Status__c, Training_Progress__c
+FROM User
+WHERE IsActive = true AND Onboarding_Status__c = 'Not Started'
+LIMIT 20
+
+// 6. Record-triggered flow inputs (the records that set them in motion)
+SELECT Id, Data_Export_Requested__c, Approval_Status__c, Priority, Status
+FROM Case
+WHERE Data_Export_Requested__c = true
+ORDER BY LastModifiedDate DESC
+
+// 7. Which users are owned tasks by the automation service (task_owner set)
+SELECT Name, Task_Owner__c, Task_Owner__r.Name, Status__c
+FROM Admin_Task__c
+WHERE Task_Owner__c != NULL
+ORDER BY Task_Owner__r.Name
+
+// 8. Stale-tasks check: due in the past, still open (auto-close target)
+SELECT Name, Status__c, Due_Date__c
+FROM Admin_Task__c
+WHERE Status__c = 'Not Started' AND Due_Date__c < TODAY
+ORDER BY Due_Date__c
+
+// 9. Flow versions deployed this week (Developer Console limitation note:
+//    use sf project deploy for version history; here we audit the objects)
+SELECT Name, Status__c, Completed_Date__c
+FROM Admin_Task__c
+WHERE Task_Type__c = 'Automation Build'
+ORDER BY Completed_Date__c DESC NULLS LAST

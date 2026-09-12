@@ -1,0 +1,61 @@
+// ============================================
+// SOQL Practice Queries - Phase 9: Service & Support Apps
+// ============================================
+// Service Cloud admin lens: SLAs, queues, escalation and CSAT.
+
+// 1. SLA heartbeat: cases by severity
+SELECT SLA_Severity__c, COUNT(Id) n
+FROM Case
+GROUP BY SLA_Severity__c
+
+// 2. First response math (formula-backed): where did we lag?
+SELECT CaseNumber, SLA_Severity__c, First_Response_Hours__c, Status
+FROM Case
+WHERE First_Response_Hours__c != NULL AND First_Response_Hours__c > 4
+ORDER BY First_Response_Hours__c DESC
+LIMIT 20
+
+// 3. Escalation trail by severity
+SELECT SLA_Severity__c, Escalation_Level__c, COUNT(Id) n
+FROM Case
+GROUP BY SLA_Severity__c, Escalation_Level__c
+ORDER BY n DESC
+
+// 4. Queue routing sanity: which queue owns what
+SELECT Owner.Name, Priority, COUNT(Id) n
+FROM Case
+WHERE Owner.Name != NULL
+GROUP BY Owner.Name, Priority
+ORDER BY n DESC
+
+// 5. Root-cause taxonomy - where do we keep losing?
+SELECT Root_Cause_Category__c, COUNT(Id) n
+FROM Case
+WHERE IsClosed = true
+GROUP BY Root_Cause_Category__c
+ORDER BY n DESC
+
+// 6. CSAT distribution across severity
+SELECT SLA_Severity__c, AVG(CSAT_Score__c) avgCsat, COUNT(Id) n
+FROM Case
+WHERE CSAT_Score__c != NULL
+GROUP BY SLA_Severity__c
+ORDER BY avgCsat DESC NULLS LAST
+
+// 7. Open queue check: what the Standard Case Queue is sitting on
+SELECT CaseNumber, Subject, Priority, Status, CreatedDate
+FROM Case
+WHERE Owner.Name = 'Standard Case Queue' AND Status != 'Closed'
+ORDER BY CreatedDate
+
+// 8. Data export pressure: how many requests hit the approval process
+SELECT Approval_Status__c, COUNT(Id) n
+FROM Case
+WHERE Data_Export_Requested__c = true
+GROUP BY Approval_Status__c
+
+// 9. Task hygiene in service flows (closed vs overdue)
+SELECT Task_Category__c, Status, COUNT(Id) n
+FROM Task
+WHERE Task_Category__c = 'Security'
+GROUP BY Task_Category__c, Status

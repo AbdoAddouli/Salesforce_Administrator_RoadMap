@@ -1,0 +1,61 @@
+// ============================================
+// SOQL Practice Queries - Phase 1: Fundamentals
+// ============================================
+// Open these in Developer Console > Query Editor
+// or use: sf data query -q "QUERY_HERE"
+
+// 1. Basic: List all Accounts with admin-relevant fields
+SELECT Name, Industry, Type, Data_Quality_Score__c, Validation_Status__c
+FROM Account
+LIMIT 10
+
+// 2. Filter by custom field: Only accounts needing review
+SELECT Name, Data_Quality_Score__c, Validation_Status__c, Duplicate_Flag__c
+FROM Account
+WHERE Validation_Status__c = 'Needs Review'
+LIMIT 20
+
+// 3. Contacts with their related Account
+SELECT Name, Email, Phone, Account.Name, Consent_To_Process__c
+FROM Contact
+WHERE AccountId != NULL
+LIMIT 20
+
+// 4. Users with admin-relevant onboarding data
+SELECT Name, Admin_Role__c, Onboarding_Status__c, IsActive
+FROM User
+WHERE Onboarding_Status__c != 'Complete'
+ORDER BY Name
+
+// 5. Open cases for the support queue review
+SELECT CaseNumber, Subject, Priority, Status, OwnerId
+FROM Case
+WHERE Status NOT IN ('Closed', 'Escalated')
+ORDER BY Priority
+
+// 6. Opportunities with account info (pipeline review)
+SELECT Name, Amount, StageName, CloseDate, Forecast_Category__c, Account.Name
+FROM Opportunity
+ORDER BY CloseDate ASC
+LIMIT 10
+
+// 7. Aggregate: Count of admin tasks by type
+SELECT Task_Type__c, COUNT(Name) taskCount
+FROM Admin_Task__c
+GROUP BY Task_Type__c
+
+// 8. Aggregate: Program of study plans by status
+SELECT Status__c, COUNT(Name) planCount
+FROM Study_Plan__c
+GROUP BY Status__c
+
+// 9. Cross-object query: Users with their Study Plans
+SELECT Name, (SELECT Name, Target_Date__c, Status__c FROM Study_Plans__r)
+FROM User
+WHERE IsActive = true
+LIMIT 10
+
+// 10. Date filter: Security audits performed this month
+SELECT Name, Audit_Type__c, Risk_Level__c, Audit_Date__c
+FROM Security_Audit__c
+WHERE Audit_Date__c = THIS_MONTH

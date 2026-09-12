@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Topic__c</fullName>
+    <externalId>false</externalId>
+    <label>Topic</label>
+    <required>true</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>false</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Configuration and Setup</fullName>
+                <default>false</default>
+                <label>Configuration and Setup</label>
+            </value>
+            <value>
+                <fullName>Object Manager and Lightning App Builder</fullName>
+                <default>false</default>
+                <label>Object Manager and Lightning App Builder</label>
+            </value>
+            <value>
+                <fullName>Sales and Marketing Applications</fullName>
+                <default>false</default>
+                <label>Sales and Marketing Applications</label>
+            </value>
+            <value>
+                <fullName>Service and Support Applications</fullName>
+                <default>false</default>
+                <label>Service and Support Applications</label>
+            </value>
+            <value>
+                <fullName>Productivity and Collaboration</fullName>
+                <default>false</default>
+                <label>Productivity and Collaboration</label>
+            </value>
+            <value>
+                <fullName>Data and Analytics</fullName>
+                <default>false</default>
+                <label>Data and Analytics</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

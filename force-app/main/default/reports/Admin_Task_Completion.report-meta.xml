@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Admin_Task_Completion</fullName>
+    <label>Admin Task Completion</label>
+    <folder>Admin_Reports</folder>
+    <reportFormat>summary</reportFormat>
+    <reportType>Admin_Task__c</reportType>
+    <columns>
+        <name>Task_Type__c</name>
+        <type>summary</type>
+        <function>grouping</function>
+    </columns>
+    <columns>
+        <name>Status__c</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Priority__c</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Due_Date__c</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Name</name>
+        <type>detail</type>
+    </columns>
+</Report>

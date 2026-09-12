@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Dashboard xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Case_Operations_Dashboard</fullName>
+    <label>Case Operations Dashboard</label>
+    <folder>Admin_Dashboards</folder>
+    <runningUserId>005000000000001</runningUserId>
+    <status>draft</status>
+    <components>
+        <components>
+            <chartType>metric</chartType>
+            <autorefresh>300</autorefresh>
+            <name>Open High Priority</name>
+            <title>Open High Priority</title>
+            <componentType>chart</componentType>
+            <filter>Priority = 'High' AND Status != 'Closed'</filter>
+        </components>
+        <components>
+            <chartType>donut</chartType>
+            <autorefresh>300</autorefresh>
+            <name>Cases by Priority</name>
+            <title>Cases by Priority</title>
+            <componentType>chart</componentType>
+            <filter>Status != 'Closed'</filter>
+        </components>
+        <components>
+            <chartType>metric</chartType>
+            <autorefresh>300</autorefresh>
+            <name>Pending Data Exports</name>
+            <title>Pending Data Exports</title>
+            <componentType>chart</componentType>
+            <filter>Approval_Status__c = 'Pending'</filter>
+        </components>
+    </components>
+</Dashboard>

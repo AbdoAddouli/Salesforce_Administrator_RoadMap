@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Open_Migration_Batches</fullName>
+    <label>Open Migration Batches</label>
+    <folder>Admin_Reports</folder>
+    <reportFormat>summary</reportFormat>
+    <reportType>Data_Migration_Batch__c</reportType>
+    <columns>
+        <name>Status__c</name>
+        <type>summary</type>
+        <function>grouping</function>
+    </columns>
+    <columns>
+        <name>Name</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Source_Object__c</name>
+        <type>detail</type>
+    </columns>
+    <columns>
+        <name>Record_Count__c</name>
+        <type>summary</type>
+        <function>sum</function>
+    </columns>
+    <columns>
+        <name>Failed_Records__c</name>
+        <type>summary</type>
+        <function>sum</function>
+    </columns>
+</Report>

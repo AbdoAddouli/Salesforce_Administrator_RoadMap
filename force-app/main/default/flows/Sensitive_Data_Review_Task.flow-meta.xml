@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>68.0</apiVersion>
+    <description>Creates a Security Review admin task whenever an account is flagged as holding sensitive data.</description>
+    <interviewLabel>Sensitive Data Review Task {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Sensitive Data Review Task</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <decisions>
+        <name>IsSensitive</name>
+        <label>Is Sensitive</label>
+        <locationX>300</locationX>
+        <locationY>200</locationY>
+        <defaultConnectorLabel>Default</defaultConnectorLabel>
+        <rules>
+            <name>SensitiveFlagged</name>
+            <label>Sensitive Flagged</label>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Sensitive_Data__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+        </rules>
+    </decisions>
+    <recordCreates>
+        <name>CreateSecurityReviewTask</name>
+        <label>Create Security Review Task</label>
+        <locationX>500</locationX>
+        <locationY>200</locationY>
+        <inputAssignments>
+            <field>Name</field>
+            <value>
+                <stringValue>Review Sensitive Data Account</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Task_Type__c</field>
+            <value>
+                <stringValue>Security Review</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Priority__c</field>
+            <value>
+                <stringValue>High</stringValue>
+            </value>
+        </inputAssignments>
+        <object>Admin_Task__c</object>
+    </recordCreates>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <recordTriggerType>AfterSave</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+</Flow>

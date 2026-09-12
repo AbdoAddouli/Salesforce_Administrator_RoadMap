@@ -1,0 +1,50 @@
+// ============================================
+// SOQL Practice Queries - Phase 11: Documentation, Sandboxes & Release Mgmt
+// ============================================
+// Before a release: inventory, dependencies, and "what touched what".
+
+// 1. What an admin actually owns (task board pre-release freeze)
+SELECT Name, Task_Type__c, Priority__c, Status__c, Due_Date__c
+FROM Admin_Task__c
+WHERE Task_Type__c = 'Deployment' AND Status__c != 'Completed'
+ORDER BY Due_Date__c
+
+// 2. Dependency check: every case relying on approval state (release blocker?)
+SELECT Id, CaseNumber, Priority, Approval_Status__c, Data_Export_Approved_At__c
+FROM Case
+WHERE Approval_Status__c != 'Draft'
+
+// 3. Change footprint: recently modified records (who touched what)
+SELECT Id, Name, LastModifiedDate, LastModifiedBy.Name, EventType
+FROM Data_Migration_Batch__c
+ORDER BY LastModifiedDate DESC
+LIMIT 10
+
+// 4. Deploy-order rehearsal: object inventory per status
+SELECT Status__c, COUNT(Id) batches
+FROM Data_Migration_Batch__c
+GROUP BY Status__c
+
+// 5. Runbook checklist trace: security findings still open right before release
+SELECT Name, Audit_Type__c, Risk_Level__c, Status__c
+FROM Security_Audit__c
+WHERE Status__c != 'Resolved'
+ORDER BY Risk_Level__c DESC
+
+// 6. Version-controllable view: everything in the academy question bank
+SELECT Training_Question_Number__c, Topic__c, Difficulty__c, Correct_Answer__c
+FROM Training_Question__c
+ORDER BY Training_Question_Number__c
+
+// 7. Post-launch smoke: did the import flow populate its counts?
+SELECT Id, Name, Record_Count__c, Successful_Records__c, Failed_Records__c
+FROM Data_Migration_Batch__c
+WHERE Record_Count__c != NULL
+ORDER BY CreatedDate DESC
+LIMIT 15
+
+// 8. Docs health: users who never finished onboarding (the flow's job)
+SELECT Name, Onboarding_Status__c, Training_Progress__c
+FROM User
+WHERE Onboarding_Status__c != 'Complete'
+ORDER BY Training_Progress__c ASC NULLS FIRST

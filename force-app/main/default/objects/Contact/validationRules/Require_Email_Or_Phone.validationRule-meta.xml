@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Require_Email_Or_Phone</fullName>
+    <active>true</active>
+    <description>Data hygiene rule: new contacts need at least one reachable channel.</description>
+    <errorConditionFormula>AND(ISNEW(), ISBLANK(Email), ISBLANK(Phone))</errorConditionFormula>
+    <errorMessage>New contacts must have an Email or a Phone number so the support team can reach out.</errorMessage>
+</ValidationRule>

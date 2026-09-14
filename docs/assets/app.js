@@ -333,6 +333,8 @@ function renderModule(mod) {
       </div>
     </div>
 
+    ${renderExercises(mod)}
+
     <div class="phase-nav reveal">
       ${mod.n > 1 ? `<a class="btn ghost" href="#/phase/${MODULES[mod.n - 2].id}">← ${MODULES[mod.n - 2].title}</a>` : '<span></span>'}
       ${mod.n < MODULES.length
@@ -432,6 +434,71 @@ function renderBlock(b) {
       </div>`;
     default: return '';
   }
+}
+
+/* ------------------------- exercises / mini-projects ------------------------- */
+
+function renderSol(text) {
+  return String(text || '').split(/```/).map((part, i) => {
+    if (!part.trim()) return '';
+    if (i % 2 === 1) return `<pre class="ex-code"><code>${esc(part)}</code></pre>`;
+    const lines = part.split('\n').map(l => l.trim()).filter(Boolean);
+    let out = '';
+    let listBuf = [];
+    const flushList = () => {
+      if (listBuf.length) {
+        out += `<ul class="tick-list">${listBuf.map(l => `<li>${esc(l.slice(2))}</li>`).join('')}</ul>`;
+        listBuf = [];
+      }
+    };
+    lines.forEach(l => {
+      if (l.startsWith('- ')) { listBuf.push(l); }
+      else { flushList(); out += `<p>${esc(l)}</p>`; }
+    });
+    flushList();
+    return out;
+  }).join('');
+}
+
+function renderExercises(mod) {
+  if (!mod.exercises || !mod.exercises.length) return '';
+  const exCount = mod.exercises.length;
+  const levels = { 'Easy': 'ex-level easy', 'Medium': 'ex-level med', 'Hard': 'ex-level hard' };
+  return `
+    <div class="exercises reveal" style="--c:${mod.color}">
+      <div class="ex-head">
+        <div class="ex-head-icon">🧪</div>
+        <div>
+          <h2>Exercises &amp; Mini Projects</h2>
+          <p class="ex-sub">${exCount} hands-on tasks. Try each one first, then reveal the solution with the button below.</p>
+        </div>
+      </div>
+      ${mod.exercises.map(ex => {
+        const lvl = levels[ex.level] || 'ex-level';
+        const badge = ex.type === 'project' ? '<span class="ex-type-badge project">project</span>' : '<span class="ex-type-badge exercise">exercise</span>';
+        return `
+        <details class="ex-card">
+          <summary class="ex-summary">
+            <span class="ex-meta-line">
+              <span class="ex-num">#${ex.n}</span>
+              ${badge}
+              <span class="${lvl}">${ex.level}</span>
+              <span class="ex-mins">${ex.mins} min</span>
+            </span>
+            <span class="ex-title">${esc(ex.title)}</span>
+            <span class="ex-toggle" aria-hidden="true">Show solution ▾</span>
+          </summary>
+          <div class="ex-body">
+            <p class="ex-brief">${esc(ex.brief)}</p>
+            <ol class="ex-steps">${ex.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+            <div class="ex-solution">
+              <div class="ex-sol-head">Solution</div>
+              <div class="ex-sol-body">${renderSol(ex.solution)}</div>
+            </div>
+          </div>
+        </details>`;
+      }).join('')}
+    </div>`;
 }
 
 /* ------------------------- quiz page ------------------------- */
@@ -595,6 +662,14 @@ document.addEventListener('click', e => {
     }
   }
 });
+
+/* exercise details label toggle */
+document.addEventListener('toggle', e => {
+  if (e.target.matches('details.ex-card')) {
+    const lbl = e.target.querySelector('.ex-toggle');
+    if (lbl) lbl.textContent = e.target.open ? 'Hide solution ▴' : 'Show solution ▾';
+  }
+}, true);
 
 /* search */
 let searchBox = null;

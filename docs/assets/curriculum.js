@@ -101,6 +101,60 @@ SELECT Name, Email, Phone, Account.Name FROM Contact WHERE AccountId != NULL LIM
       ]
     },
   ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Map the admin toolkit in Setup', level: 'Easy', mins: 10,
+      brief: `A new sales admin joins the team. Point them at the exact Setup locations for the five declarative tools an admin uses daily.`,
+      steps: [
+        `Log in to your Developer Edition org and open Setup from the gear icon (top right).`,
+        `Use Quick Find to open Object Manager, then the three automation tools: Flows, Validation Rules and Approval Processes.`,
+        `Find the two data tools: Data Import Wizard and Data Loader.`,
+        `Find where Field-Level Security lives (Object Manager → any object → Field Accessibility).`,
+      ],
+      solution: `Object Manager → Setup → Object Manager.
+Flows → Setup → Flows (under Automation).
+Validation Rules → Setup → Object Manager → <object> → Validation Rules.
+Approval Processes → Setup → Approval Processes.
+Data Import Wizard → Setup → Data Import Wizard.
+Data Loader → a desktop app installed separately (Setup → Data Loader links out to it).
+Field-Level Security → Setup → Object Manager → Account → Fields & Relationships → Field Accessibility.
+The Administrator exam tests exactly these paths — nail them from week one.`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Declarative vs programmatic — draw the line', level: 'Easy', mins: 10,
+      brief: `For each scenario, pick declarative (Flow / Validation Rule / Permission Set) or programmatic (Apex), plus a one-line justification.`,
+      steps: [
+        `Create three onboarding tasks when a new user is created.`,
+        `Roll up the total of won opportunities on an Account.`,
+        `Call an external REST service and parse JSON inside a transaction.`,
+        `Let the accounts team approve a data export.`,
+      ],
+      solution: `Three onboarding tasks → declarative. The shipped New_User_Onboarding_Tasks flow does exactly this.
+Roll-up on Account → declarative if the relationship is Master-Detail (roll-up summary field); otherwise Apex.
+External REST + JSON parsing → programmatic (Apex). Flows can call invocable Apex, but the parsing lives in code.
+Data export approval → declarative. The Data_Export_Approval_Request flow + Data_Export_Approval process do it end to end.
+Rule of thumb: Flow Builder is the default; Apex is for what flows cannot express.`,
+    },
+    {
+      n: 3, type: 'project', title: 'Mini Project — Deploy the RoadMap to your own org', level: 'Medium', mins: 25,
+      brief: `Actually run the learning lab: authenticate an org, deploy all metadata, and prove the five custom objects exist with a SOQL query.`,
+      steps: [
+        `Install Salesforce CLI and run: sf org login web --alias myDevOrg`,
+        `Deploy everything: sf project deploy start --source-dir force-app/main/default --target-org myDevOrg --wait 15`,
+        `Open the org → Object Manager and confirm the five custom objects: Admin_Task__c, Security_Audit__c, Data_Migration_Batch__c, Training_Question__c, Study_Plan__c.`,
+        `In Developer Console → Query Editor, run the fundamentals query and confirm it returns without error.`,
+      ],
+      solution: `The two commands:
+sf org login web --alias myDevOrg
+sf project deploy start --source-dir force-app/main/default --target-org myDevOrg --wait 15
+
+Then, in Developer Console → Query Editor:
+
+SELECT Name, Task_Type__c, Status__c, Due_Date__c FROM Admin_Task__c LIMIT 10
+
+Zero rows is the correct starting state — the objects exist, and the triggers and flows start producing data as you insert records. Confirm the alias is alive anytime with: sf org list`,
+    },
+  ],
   quiz: {
     title: 'Phase 1 Quiz · Fundamentals', mins: 5,
     questions: [
@@ -211,6 +265,59 @@ SELECT Name, Account.Name, Account.Industry FROM Contact WHERE AccountId != NULL
       ]
     },
   ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Pick the right field type', level: 'Easy', mins: 10,
+      brief: `For each requirement choose the correct field type and justify it in one line.`,
+      steps: [
+        `A task number that auto-increments and is read-only.`,
+        `A "Market" value drawn from a fixed list (NAM, EMEA, APAC, …).`,
+        `A number sales derives from Amount × Probability.`,
+        `A point in time that must be timezone-aware.`,
+        `Child records (order lines) that must be deleted when the parent is.`,
+      ],
+      solution: `Task number → AutoNumber with a format like AT-{00000}: stable, human-readable, read-only.
+Market → Picklist: a controlled vocabulary keeps reports clean and enforces values.
+Amount × Probability → Formula: IF(IsClosed, 0, ROUND(Amount * Probability, 2)) — derived, recomputes on save, no DML.
+Timezone-aware point in time → Date/Time (a plain Date has no timezone).
+Child records deleted with parent → Master-Detail: cascading delete plus roll-up summaries for free (a Lookup would block or orphan the children).`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Write a validation rule from a spec', level: 'Medium', mins: 15,
+      brief: `Support wants a rule: a Closed Case must carry a resolution, and a High-priority Case must have a Subject. You already ship the second — write the first.`,
+      steps: [
+        `Open Setup → Object Manager → Case → Validation Rules.`,
+        `Create Require_Resolution_For_Closed with error text shown to users.`,
+        `Test it: try to save a Closed Case with a blank resolution and confirm the save is blocked.`,
+        `Compare with the shipped rule under force-app/main/default/objects/Case/validationRules/.`,
+      ],
+      solution: `The shipped rule mirrors this formula:
+
+AND( ISCHANGED(Status), TEXT(Status) = "Closed", ISBLANK(Resolution__c) )
+
+or the ISBLANK(TEXT(Resolution__c)) guard. Error message on the record: "Enter a resolution before closing this Case."
+Tip: disable the rule only during bulk loads where the data is fixed upstream — never delete it.`,
+    },
+    {
+      n: 3, type: 'project', title: 'Mini Project — Build a Feedback__c schema', level: 'Medium', mins: 25,
+      brief: `Design and create a tiny custom schema the repo does NOT ship: learner feedback records tied to Study_Plan__c.`,
+      steps: [
+        `Create the object Feedback__c as a Master-Detail child of Study_Plan__c.`,
+        `Add fields: Rating__c (Number 1–5), Topic__c (Picklist), Comments__c (Long Text).`,
+        `Add a validation rule blocking a rating below 1 or above 5.`,
+        `Add a roll-up summary on Study_Plan__c that counts feedback records.`,
+      ],
+      solution: `Object Manager → New Custom Object Feedback__c, relationship type Master-Detail, master = Study_Plan__c.
+Fields: Rating__c = Number (2,0), Topic__c = Picklist, Comments__c = Long Text (32768).
+Validation rule on Feedback__c:
+
+OR( Rating__c < 1, Rating__c > 5 )
+
+Error: "Rating must be between 1 and 5.".
+Roll-up summary on Study_Plan__c: Feedback_Count__c = COUNT(Feedback__r).
+You just exercised the whole Phase 2 stack in one object: object → fields → relationship → rule → summary.`,
+    },
+  ],
   quiz: {
     title: 'Phase 2 Quiz · Object Manager & Data Model', mins: 5,
     questions: [
@@ -308,6 +415,58 @@ FROM User WHERE Is_Deactivation_Candidate__c = true` },
         ]},
         { t: 'selfcheck', q: `A compliance call "only accesses Salesforce from our office". Which two profile settings enforce this?`, a: `Login Hours (allowed times) and Login IP Ranges (trusted addresses).` },
       ]
+    },
+  ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Diagnose a security break-fix', level: 'Easy', mins: 10,
+      brief: `A rep can log in but only sees their own records — not the Sales records other reps work on together. Walk the four security layers to isolate the cause.`,
+      steps: [
+        `Start at layer 4 (record access): is OWD Private with no sharing rule or role-hierarchy path?`,
+        `Move up: is the object or a field hidden by FLS or object CRUD on the profile / permission set?`,
+        `Check layer 1: login hours, IP ranges, MFA.`,
+        `Decide the least-privilege fix — what single change grants the minimal extra access?`,
+      ],
+      solution: `OWD Private is the usual suspect. Sharing rules can only ELEVATE access, so a colleague below the owner's role sees nothing until you intervene.
+The least-privilege fix: a criteria-based sharing rule (e.g. share the team's Accounts/Opportunities with the rep's role through the role hierarchy, or with a public group containing the rep) — NOT loosening OWD to Public Read/Write.
+If only one field is missing, fix the FLS flag on the profile/permission set instead of touching record sharing.
+Order of attack: record (4) → field (3) → object (2) → org (1).`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Design a permission set for a role', level: 'Medium', mins: 15,
+      brief: `Support managers need to read ALL Cases and export them monthly — nothing else beyond their profile.`,
+      steps: [
+        `Define the object-level access: what CRUD do you grant on Case, and what stays Read?`,
+        `Define minimum field-level security that still lets them see resolution comments.`,
+        `Pick the sharing mechanism so they see every Case regardless of owner.`,
+        `Implement it as a permission set named Support_Manager, not an edited profile.`,
+      ],
+      solution: `Permission set Support_Manager: Case = Read (no Create/Edit/Delete), keeps the export for the approval process.
+FLS: expose Subject, Status, Priority, Resolution__c, Data_Export_Requested__c; keep internal fields hidden.
+Sharing: a criteria-based sharing rule (all Cases → Support Managers public group) layered on top of OWD — normal record access stays owner-based.
+Why a permission set: they are add-on and removable per user without changing the shared baseline profile.`,
+    },
+    {
+      n: 3, type: 'project', title: 'Mini Project — Run the login-audit loop', level: 'Medium', mins: 20,
+      brief: `Act as the audit SecurityService automates: find stale users, record findings, and flag deactivation candidates.`,
+      steps: [
+        `Query users who have never logged in: SELECT Name, LastLoginDate, IsActive FROM User WHERE IsActive = true AND LastLoginDate = NULL`,
+        `From the results, identify which ones are deactivation candidates.`,
+        `Reproduce the audit in anonymous Apex using SecurityService.flagDeactivationCandidates and buildLoginAuditFindings.`,
+        `Insert one Security_Audit__c finding per candidate with Risk_Level__c = 'High'.`,
+      ],
+      solution: `SOQL:
+SELECT Name, LastLoginDate, IsActive FROM User WHERE IsActive = true AND LastLoginDate = NULL
+
+Anonymous Apex to mirror the service:
+SecurityService.flagDeactivationCandidates(staleUsers);
+List<Security_Audit__c> findings = SecurityService.buildLoginAuditFindings(staleUsers);
+insert findings;
+
+And for access gaps:
+SecurityService.flagMissingPermissionSets(users, assignedSets);
+
+Each finding carries Audit_Type__c, Risk_Level__c, Finding__c and Status__c — exactly the fields Security_Audit_Status report groups on.`,
     },
   ],
   quiz: {
@@ -410,6 +569,58 @@ FROM User WHERE Is_Deactivation_Candidate__c = true` },
       ]
     },
   ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Provision a new support agent', level: 'Easy', mins: 10,
+      brief: `Alex starts Monday as a support agent. Create their user record and the minimum access to get them productive.`,
+      steps: [
+        `Setup → Users → New User and fill in the contact + login details.`,
+        `Assign the right license and a standard profile for support work.`,
+        `Add Alex as a member of the Standard Case Queue.`,
+        `Leave Onboarding_Status__c as Not Started and let the automation take over.`,
+      ],
+      solution: `New User with the Service Cloud user license and a Standard support profile (never the System Administrator profile for day-one humans).
+Setup → Queues → Standard Case Queue → Add Members → Alex. Queues hold owner-less Cases until a member claims them.
+Because Onboarding_Status__c starts Not Started, the UserTrigger + New_User_Onboarding_Tasks flow stamp the record and create the three onboarding tasks — Profile Review, Permission Set, Ownership. Verify they appear on Alex's Tasks tab.`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Roles, queues and groups — sort the toolbox', level: 'Easy', mins: 8,
+      brief: `Match each need to a component: Role, Queue or Public Group.`,
+      steps: [
+        `A records pool the whole support team can grab Cases from.`,
+        `A visibility stack where managers see their reportees' records.`,
+        `A named set of users you reuse in sharing rules and permission sets.`,
+        `A place to park unassigned Leads before assignment.`,
+      ],
+      solution: `Team Cases pool → Queue (owner-less holding area; assignment rules route into it).
+Manager visibility → Role (the hierarchy elevates record access, never ownership).
+Reusable set in sharing rules → Public Group (contains users, queues, and other groups).
+Unassigned Leads → Queue again (assignment rules evaluate once at creation).`,
+    },
+    {
+      n: 3, type: 'project', title: 'Mini Project — Automate an onboarding checklist', level: 'Medium', mins: 25,
+      brief: `Reproduce the shipped onboarding automation: stamp defaults on user creation, then trigger the deactivation follow-up.`,
+      steps: [
+        `Review New_User_Onboarding_Tasks in Setup → Flows and note its three task branches.`,
+        `Insert a test user from anonymous Apex so the UserTrigger fires.`,
+        `Confirm Onboarding_Status__c was stamped by UserManagementService.applyOnboardingDefaults.`,
+        `Deactivate the test user and confirm the User_Deactivation_FollowUp flow raises a cleanup task.`,
+      ],
+      solution: `Anonymous Apex (run as a System Administrator):
+User u = new User(
+  FirstName='Demo', LastName='Learner',
+  Username='demo' + System.now().getTime() + '@example.com',
+  Email='demo@example.com', Alias='demolearner',
+  TimeZoneSidKey='America/Los_Angeles', LocaleSidKey='en_US',
+  EmailEncodingKey='UTF-8', LanguageLocaleKey='en_US',
+  ProfileId = [SELECT Id FROM Profile WHERE Name='Standard User'].Id
+);
+insert u;
+System.debug('Onboarding_Status__c => ' + u.Onboarding_Status__c);
+
+The trigger stays thin — one call to applyOnboardingDefaults — and all logic lives in the testable service. When you flip IsActive = false, User_Deactivation_FollowUp reacts and creates the cleanup task so orphaned records are not forgotten.`,
+    },
+  ],
   quiz: {
     title: 'Phase 4 Quiz · Users & Org Setup', mins: 5,
     questions: [
@@ -507,6 +718,60 @@ FROM Contact ORDER BY Consent_Date__c DESC NULLS LAST` },
         ]},
         { t: 'selfcheck', q: `What does Data_Import_Validation do when a fresh batch has records?`, a: `It marks the batch In Progress — handing the Journal to DataMigrationService.` },
       ]
+    },
+  ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Find & merge duplicates', level: 'Easy', mins: 10,
+      brief: `Your Account list has "ACME Corp" twice. Find it, resolve it, and stop it from happening again.`,
+      steps: [
+        `Run a query that lists every Account name that occurs more than once.`,
+        `Flag or merge the duplicate pairs.`,
+        `Prevent recurrence with duplicate management (or the shipped name-normalization flagger).`,
+      ],
+      solution: `The one-shot duplicate query:
+SELECT LOWER(TRIM(Name)) nameNorm, COUNT(Id) n
+FROM Account GROUP BY LOWER(TRIM(Name)) HAVING COUNT(Id) > 1
+
+TRIM + LOWER normalize trailing spaces and casing so "ACME Corp " and "acme corp" collide.
+Then merge from the Account list view (or Data Loader), and enable Duplicate Management → Matching Rules → Account → Name → Duplicate Rule with a merge action.
+In this repo the same effect is DataManagementService.flagDuplicateAccounts, fired by the AccountTrigger: two consecutive "ACME Corp" inserts stamp Duplicate_Flag__c on the second.`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Choose the data-loading tool', level: 'Easy', mins: 8,
+      brief: `Pick a tool for each job and note the key skill that makes it work.`,
+      steps: [
+        `A one-off import of 500 Accounts, UI-driven, today.`,
+        `A scheduled 40k-row upsert every night.`,
+        `A monthly full backup of your data.`,
+        `Matching 2,000 Contact rows to existing records by email.`,
+      ],
+      solution: `500 Accounts one-off → Data Import Wizard (up to ~50k records, point and click).
+Scheduled 40k upsert → Data Loader with a CSV and an External ID as the upsert key (standard record Ids are NOT upsert keys — classic exam trap).
+Monthly backup → Data Export (weekly export service still offered; archive the CSV/ZIP).
+Match by email → Data Loader upsert mapping Contact.Email to a Contact External ID field, or Duplicate Management.`,
+    },
+    {
+      n: 3, type: 'project', title: 'Mini Project — Run a journaled migration batch', level: 'Medium', mins: 25,
+      brief: `Import Contacts for real and prove every step was journaled on Data_Migration_Batch__c with a platform-event trail.`,
+      steps: [
+        `Open a batch with DataMigrationService.openBatch('Contact', 100).`,
+        `Insert the rows; count successes and failures.`,
+        `Journal the run with DataMigrationService.recordProgress(batch, successes, failures).`,
+        `Close it, then query the batch and inspect the Data_Migration_Event__e trail.`,
+      ],
+      solution: `Anonymous Apex using the published service:
+Data_Migration_Batch__c batch = DataMigrationService.openBatch('Contact', 100);
+// insert Contacts here; keep success/failure counters
+DataMigrationService.recordProgress(batch, 100, 0);
+DataMigrationService.closeBatch(batch.Id, true);
+
+Then prove it:
+SELECT Name, Source_Object__c, Record_Count__c, Successful_Records__c,
+       Failed_Records__c, Status__c
+FROM Data_Migration_Batch__c ORDER BY CreatedDate DESC LIMIT 5
+
+Each step publishes Data_Migration_Event__e (CREATED / PROGRESS / CLOSED) through EventBus.publish — the Handle_Data_Migration_Progress flow or any subscriber reacts without coupling to the batch object. Status__c should read 'Completed'.`,
     },
   ],
   quiz: {
@@ -614,6 +879,54 @@ FROM Contact ORDER BY Consent_Date__c DESC NULLS LAST` },
       ]
     },
   ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Classify the automation scenario', level: 'Easy', mins: 10,
+      brief: `For each scenario, name the flow type: Record-Triggered, Schedule-Triggered, Screen, or Autolaunched.`,
+      steps: [
+        `React the moment a Case becomes High Priority.`,
+        `Email a workload digest every Monday at 8 a.m.`,
+        `A wizard that guides a user through data entry.`,
+        `Logic invoked from Apex or an API call, with inputs, no UI.`,
+      ],
+      solution: `High-Priority Case → Record-Triggered (fires after save on Case).
+Monday digest → Schedule-Triggered (fixed cadence, e.g. Daily/Fixed from "8:00 AM Monday").
+Data-entry wizard → Screen (pauses for user interaction).
+Logic called by Apex/API → Autolaunched (event-style, reusable, no trigger record).
+The most-examined wiring: a record-triggered flow sets the stage; a screen flow collects input; an autolaunched flow is the reusable engine.`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Read flow XML — find the elements', level: 'Medium', mins: 15,
+      brief: `Open New_User_Onboarding_Tasks.flow-meta.xml in the repo and map its elements by hand before reading on.`,
+      steps: [
+        `Find the <start> block and note the trigger object + event (after save?).`,
+        `Count the <recordCreates> elements — how many tasks does it build?`,
+        `Find any <assignment> or <decisions> that shape the task names or owners.`,
+        `Check whether a fault path (<faultConnector>) exists.`,
+      ],
+      solution: `The flow is a record-triggered flow on User set to run After Save.
+It contains exactly three <recordCreates>: Profile Review task, Permission Set task, Ownership task — the three onboarding chores.
+The task names are stamped via assignments/record-create field values rather than hard-coded text where possible.
+Fault paths: professional flows include one so a failing element is reported, not swallowed. Compare your findings to the tools that surface these as Run/Flow Builder's debug run.`,
+    },
+    {
+      n: 3, type: 'project', title: 'Mini Project — Rebuild the Case_Escalation_Task flow', level: 'Medium', mins: 25,
+      brief: `Recreate a shipped flow from scratch in Flow Builder, then diff your structure against the shipped XML.`,
+      steps: [
+        `Create a Record-Triggered flow on Case (After Save) in Flow Builder.`,
+        `Add an entry condition: only proceed when Escalation_Level__c > 1.`,
+        `Record-Create one Task: Subject includes the case number, Priority High, linked to the Case.`,
+        `Activate, then open force-app/main/default/flows/Case_Escalation_Task.flow-meta.xml and compare element by element.`,
+      ],
+      solution: `Flow Builder structure:
+- Start element → object: Case, trigger: A record is created (After Save).
+- Entry condition → formula: {!$Record.Escalation_Level__c} > 1.
+- Record Create → Task: Subject = 'Escalate Case ' & {!$Record.CaseNumber}, Priority = High, WhatId = {!$Record.Id}.
+- Save + Activate.
+
+The shipped XML follows the identical skeleton — start → condition → recordCreate. Rebuild it from memory, then diff: you will notice the fault path and the field naming conventions. That diff is the learning.`,
+    },
+  ],
   quiz: {
     title: 'Phase 6 Quiz · Automation — Flows', mins: 5,
     questions: [
@@ -718,6 +1031,57 @@ SELECT Approval_Status__c, COUNT(Id) n FROM Case GROUP BY Approval_Status__c` },
         ]},
         { t: 'selfcheck', q: `You want a records pool everyone in a team can grab from. Which construct?`, a: `A Queue — it owns the records without a single owner, and assignment rules route into it.` },
       ]
+    },
+  ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Trace the Data_Export_Approval decision map', level: 'Easy', mins: 10,
+      brief: `Walk a Case through the shipped approval process and predict every field transition.`,
+      steps: [
+        `What two conditions start the process?`,
+        `Who receives the first submission?`,
+        `What values do approval, rejection and recall write to Approval_Status__c?`,
+        `Verify your answers against the XML, then audit real submissions in SOQL.`,
+      ],
+      solution: `Entry criteria: Data_Export_Requested__c = TRUE AND Priority = High (the booleanFilter is 1 AND 2).
+Step-1 approver: the record owner's manager — ManagerOfRecordOwner + HierarchyToRecordOwner.
+Transitions: Approve → Approval_Status__c = 'Approved', Reject → 'Rejected', Recall → 'Draft'.
+Audit with:
+SELECT Approval_Status__c, COUNT(Id) n FROM Case GROUP BY Approval_Status__c
+SELECT ProcessInstanceId, TargetObjectId, ActorId, CompletedDate, StepStatus, Comments
+FROM ProcessInstanceStep ORDER BY CreatedDate DESC LIMIT 20`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Wire queues + assignment rules', level: 'Medium', mins: 15,
+      brief: `Route new Cases to the right queue: High-priority work to one pool, everything else to another.`,
+      steps: [
+        `Create the two queues: High Priority Case Queue and Standard Case Queue.`,
+        `Create an assignment rule on Case with a 1 OR 2 boolean filter.`,
+        `Point entry 1 at High Priority Cases and entry 2 at the rest.`,
+        `Create a test Case and confirm the Owner lands in the right queue.`,
+      ],
+      solution: `Setup → Queues → New Queues (High Priority Case Queue, Standard Case Queue) — queues must exist BEFORE the assignment rule references them, or creation throws.
+Setup → Case → Assignment Rules: New Rule "Case Queue Routing", booleanFilter 1 OR 2; entry 1 = Priority = High → High Priority Case Queue; entry 2 = Standard → Standard Case Queue.
+Assignment rules evaluate once at record creation and can assign to Queues — never to Roles. Make sure "Enable active assignment rules" is on, then insert a High-priority Case and read its Owner: it should be the High Priority Case Queue.`,
+    },
+    {
+      n: 3, type: 'project', title: 'Mini Project — Build a Vacation Request approval', level: 'Medium', mins: 25,
+      brief: `Reuse the shipped pattern to build your own time-off approval process end to end.`,
+      steps: [
+        `Create Leave_Request__c with Start_Date__c, End_Date__c and Status__c picklists.`,
+        `Build an approval process: entry = blank Status, step 1 = manager of the requester.`,
+        `Final approval actions → Status__c = 'Approved'; rejection → 'Rejected'.`,
+        `Submit a request for approval and audit the decisions in SOQL.`,
+      ],
+      solution: `The structure mirrors Data_Export_Approval: entry criteria, one approval step, then final actions.
+- Entry: ISBLANK(TEXT(Status__c)).
+- Step: approver = ManagerOfRecordOwner.
+- FinalApprovalActions: Status__c = 'Approved'. FinalRejectionActions: Status__c = 'Rejected'.
+- Submit via the Submit for Approval button, then audit:
+SELECT ProcessInstanceId, TargetObjectId, ActorId, CompletedDate, StepStatus, Comments
+FROM ProcessInstanceStep ORDER BY CreatedDate DESC LIMIT 10
+
+Compose declaratively: an optional flow sets Status__c = 'Pending' before submission; the approval process finalizes it. Flow sets the stage, the process delivers the verdict.`,
     },
   ],
   quiz: {
@@ -828,6 +1192,55 @@ GROUP BY cm.CampaignId, cm.Campaign.Name` },
       ]
     },
   ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Weighted-revenue game', level: 'Easy', mins: 10,
+      brief: `Check your forecast math before you touch the reports.`,
+      steps: [
+        `A $50,000 deal at 40% probability — weighted revenue?`,
+        `A $90,000 Closed Won deal — weighted revenue, and where does it land in the forecast?`,
+        `Total weighted pipeline: $20,000 at 60% plus $30,000 at 80%.`,
+      ],
+      solution: `$50,000 × 0.40 = $20,000.
+Closed Won → $0 in the weighted formula (IF(IsClosed, 0, …)) — it leaves Weighted Pipeline and moves to the Closed (won) forecast bucket. This is the forecast-category shift the exam loves.
+Total weighted = (20,000 × 0.60) + (30,000 × 0.80) = 12,000 + 24,000 = $36,000.
+Cross-check with:
+SELECT Forecast_Category__c, SUM(Weighted_Expected_Revenue__c) weighted
+FROM Opportunity WHERE IsClosed = false GROUP BY Forecast_Category__c`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Stage the lead lifecycle', level: 'Medium', mins: 15,
+      brief: `Leads enter as New and must convert into Accounts, Contacts and Opportunities — your org has no record types on Lead yet.`,
+      steps: [
+        `Design the lead-status picklist with a "Qualified = convertible" value.`,
+        `Decide the lead assignment rule: geographic route by Region.`,
+        `Set up Lead Convert with the Account-Contact-Opportunity mapping.`,
+        `Prevent duplicates at capture with a matching rule on email/company name.`,
+      ],
+      solution: `Status picklist: New → Watched → Contacted → Qualified (convert) with Recycle / Nurture on a separate path. The Qualified value maps to the Converted status.
+Assignment rule on Lead: Region (or Market__c) → routes to the EMEA/NAM/APAC queue or owner.
+Lead Convert: mapping Account = Company + Contact = Lead name + Opportunity = auto-convert options. Conversion creates all three records.
+Duplicate prevention: matching rule on Email + Company on Lead, activated as a Duplicate Rule with block/matching behavior — the same mechanics you used on Account in Phase 5.`,
+    },
+    {
+      n: 3, type: 'project', title: 'Mini Project — Campaign attribution report', level: 'Medium', mins: 20,
+      brief: `Prove which campaign drives revenue by building the CampaignMember → attributed revenue pipeline.`,
+      steps: [
+        `Create a Campaign (e.g. "Winter Webinar 2026") with an active record type.`,
+        `Add Contacts as members and mark their status Responded.`,
+        `Create an Opportunity and attribute revenue back to the campaign.`,
+        `Write the SOQL that totals members and attributed revenue per campaign, then mirror it as a Campaign report.`,
+      ],
+      solution: `Attributed revenue per campaign:
+SELECT cm.Campaign.Name, COUNT(cm.Id) members,
+       SUM(cm.Opportunity.Amount) attributedRevenue
+FROM CampaignMember cm
+WHERE cm.Status = 'Responded'
+GROUP BY cm.CampaignId, cm.Campaign.Name
+
+In Report Builder: report type Campaigns with Campaign Members, add the related Opportunity object for Amount. If multiple campaigns touch a win, choose the attribution model (First Touch / Last Touch / Even Distribution / Time-Decay) — for a single-touch demo, Even Distribution keeps the credit fair. The repo's Campaign_Source__c field on Lead/Contact helps attribute inbound records too.`,
+    },
+  ],
   quiz: {
     title: 'Phase 8 Quiz · Sales & Marketing', mins: 5,
     questions: [
@@ -920,6 +1333,60 @@ FROM Case WHERE Escalation_Level__c > 1` },
         { t: 'callout', kind: 'tip', x: `This is the declarative composition pattern: a flow sets the stage, an approval process finalizes it.` },
         { t: 'selfcheck', q: `After the manager rejects, what does the recall/final action leave on the record?`, a: `Approval_Status__c = Rejected (or Draft after a recall).` },
       ]
+    },
+  ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Read the case queue', level: 'Easy', mins: 10,
+      brief: `Support health check in three queries.`,
+      steps: [
+        `Show Case volume by priority, largest first.`,
+        `Show which Cases breached a 4-hour first response.`,
+        `Show open High-priority Cases still sitting in a queue.`,
+      ],
+      solution: `Volume by priority:
+SELECT Priority, COUNT(Id) n FROM Case GROUP BY Priority ORDER BY n DESC
+
+Breach list:
+SELECT CaseNumber, First_Response_Hours__c, Status
+FROM Case WHERE First_Response_Hours__c > 4 ORDER BY First_Response_Hours__c DESC
+
+Open high-priority work in a queue:
+SELECT CaseNumber, Subject, Priority, Owner.Name
+FROM Case
+WHERE Priority = 'High' AND Status != 'Closed' AND Owner.Name LIKE '%Queue%'
+
+First_Response_Hours__c is the formula off FirstRespondedDate − CreatedDate — your canary field for SLA behavior.`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Design the escalation ladder', level: 'Medium', mins: 15,
+      brief: `A P1 Case must escalate automatically. Which construct handles each rung of the ladder?`,
+      steps: [
+        `Case enters the team pool when it is created — which routing tool?`,
+        `An SLA assigns "respond within 4h" — which objects?`,
+        `Escalation_Level__c > 1 must create a follow-up task — which automation?`,
+        `A 24-hour no-response must fire a reminder — which modern tool?`,
+      ],
+      solution: `Team pool → Assignment rule (evaluated once at creation) into the High Priority Case Queue.
+SLA → Entitlement (record-level SLA) + Entitlement Process (milestones First Response / Resolution that enforce it).
+Escalation task → Record-Triggered Flow (the shipped Case_Escalation_Task fires on Escalation_Level__c > 1).
+24-hour reminder → Scheduled Flow — the modern replacement for the legacy Workflow time trigger.`,
+    },
+    {
+      n: 3, type: 'project', title: 'Mini Project — Build an entitlement SLA', level: 'Medium', mins: 25,
+      brief: `Give every premium customer Case a first-response SLA with a breach notification.`,
+      steps: [
+        `Create an Entitlement Process "Premium SLA" with a 4-hour First Response milestone and email action on breach.`,
+        `Create the Entitlement record and attach it to the premium Account/Contact.`,
+        `Set the Case's Service Contract / Entitlement association so milestones compute.`,
+        `Create a test Case, confirm the milestone behavior, and note how the modern time action differs from legacy triggers.`,
+      ],
+      solution: `Setup → Entitlement Processes → New "Premium SLA": milestone First Response (target 4 hours) with an email alert action condition that fires when breached.
+Setup → Entitlements → create a Premium SLA entitlement tied to the Account (with a start/end and + counts if wanted).
+On the Case, the Entitlement association starts the milestone clock for First_Response_Hours__c.
+The 4-hour breach action historically needed a Workflow time trigger; today the right tool is a Scheduled Flow with a time filter. Verify outcomes with:
+SELECT CaseNumber, First_Response_Hours__c, Status
+FROM Case WHERE First_Response_Hours__c > 4`,
     },
   ],
   quiz: {
@@ -1031,6 +1498,58 @@ ORDER BY yr, mon` },
       ]
     },
   ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Pick the report format', level: 'Easy', mins: 8,
+      brief: `Choose the format — Tabular, Summary or Matrix — for each ask.`,
+      steps: [
+        `A raw dump of every Account, no grouping.`,
+        `Grouped Cases by Priority with counts and a chart.`,
+        `A cross-tab of StageName across quarters.`,
+        `You want to add a bucket field to break the data into bands.`,
+      ],
+      solution: `Raw dump → Tabular (columns only, no grouping).
+Grouped + counts → Summary (group by + subtotals + chart friendly).
+Stage across quarters → Matrix (two dimensions — row AND column groupings).
+Bucket field → only Summary and Matrix support buckets — never Tabular.
+If a report needs buckets AND rows/columns of a join, remember joins only work across standard objects and buckets cap at ~20.`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Mirror a dashboard in SOQL', level: 'Medium', mins: 15,
+      brief: `The Certification_Progress dashboard shows study-plan status and hours. Reproduce its numbers with one query.`,
+      steps: [
+        `Find how many plans are On Track vs Behind.`,
+        `Total planned hours per status.`,
+        `Then check Training_Question_Coverage — are Easy/Medium/Hard balanced per topic?`,
+      ],
+      solution: `Plans by status with summed hours:
+SELECT Status__c, COUNT(Id) plans, SUM(Hours_Per_Week__c) hours
+FROM Study_Plan__c GROUP BY Status__c
+
+Bank balance by topic and difficulty:
+SELECT Topic__c, Difficulty__c, COUNT(Id) n
+FROM Training_Question__c GROUP BY Topic__c, Difficulty__c ORDER BY n DESC
+
+The four shipped dashboards are each just one or two of these aggregation patterns (metric + bar) with dashboard filters — slice, don't build ten dashboards.`,
+    },
+    {
+      n: 3, type: 'project', title: 'Mini Project — Build the admin command center', level: 'Medium', mins: 25,
+      brief: `Compose a single dashboard from the shipped reports and their SOQL mirrors.`,
+      steps: [
+        `Create the Admin_Dashboards folder and mark it public, or reuse the shipped one.`,
+        `Add three metric components: High-risk security findings, Duplicates flagged, Open High-priority Cases.`,
+        `Add a bar chart of Cases by Priority and a donut of Security Audits by Type.`,
+        `Make the dashboard dynamic so each viewer sees the org through their own permissions.`,
+      ],
+      solution: `Reference skeleton (every shipped report shares it):
+<columns><field>ACCOUNT.NAME</field><aggregate>Grouping</aggregate></columns>
+<folder>Admin_Reports</folder>
+
+Components: the metric component is the single-number tile (e.g. "High Risk Findings" filtered by Risk_Level__c = 'High' AND Status__c != 'Resolved').
+Bar/donut options come from the summary groups in Phase 9 and Phase 10 queries.
+Dynamic dashboard = each viewer becomes the running user, so record-level security applies per viewer — perfect for an academy with mixed licenses. Compare your design to the shipped Case_Operations / Security_Posture dashboards.`,
+    },
+  ],
   quiz: {
     title: 'Phase 10 Quiz · Analytics', mins: 5,
     questions: [
@@ -1130,6 +1649,60 @@ FROM Data_Migration_Batch__c ORDER BY CreatedDate DESC LIMIT 15` },
         ]},
         { t: 'selfcheck', q: `Where does Salesforce itself record who changed what in Setup?`, a: `The Setup Audit Trail — Section, Action, CreatedBy, CreatedDate.` },
       ]
+    },
+  ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Pick the sandbox', level: 'Easy', mins: 8,
+      brief: `Match each job to a sandbox type.`,
+      steps: [
+        `A developer needs metadata only, refreshed up to daily.`,
+        `UAT with a slice of production data, refreshed weekly.`,
+        `A full dress rehearsal including production data and volumes.`,
+        `Integration development against metadata plus a bigger sandbox footprint.`,
+      ],
+      solution: `Metadata only, daily → Developer.
+UAT with sample data, weekly → Partial Copy.
+Full production copy, up to 30-day refresh → Full.
+Integration development → Developer Pro (larger footprint than Developer).
+Never develop directly in Production — metadata-first workflows and scratch orgs keep the release train honest.`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Order-of-deployment logic', level: 'Medium', mins: 12,
+      brief: `You are pushing a new object + fields + a flow + a permission set. Get the order right and say why.`,
+      steps: [
+        `What has to deploy before the flow that references it?`,
+        `What has to exist before the permission set grants CRUD on it?`,
+        `When do reports/dashboards deploy relative to the object?`,
+        `Where does --check-only fit, and how do you verify post-deploy?`,
+      ],
+      solution: `The repo's own dependency order (ReleaseManagementService.recommendedDeployOrder):
+Custom Objects → Fields → Validation Rules / Custom Metadata → Flows & Apex → Permission Sets → Reports / Dashboards.
+
+- The object must exist before the flow compiles against it (compile-order requirement).
+- The permission set references object CRUD, so the object deploys first.
+- Reports/dashboards reference fields, so they are last.
+Dry run first: sf project deploy start --check-only --source-dir force-app/main/default --target-org myDevOrg --wait 15
+Verify post-deploy with smoke queries — batches with populated counters and timestamps: SELECT Id, Record_Count__c, Successful_Records__c, Failed_Records__c FROM Data_Migration_Batch__c ORDER BY CreatedDate DESC LIMIT 15`,
+    },
+    {
+      n: 3, type: 'project', title: 'Mini Project — Prep and dry-run a release', level: 'Medium', mins: 20,
+      brief: `Plan a real release window: freeze check, validate, then document the run.`,
+      steps: [
+        `Announce the freeze and confirm the window via ReleaseManagementService.isInFreezeWindow.`,
+        `Backup: run Data Export and capture the package version.`,
+        `Dry-run the whole metadata with --check-only against a scratch org and fix any errors.`,
+        `Deploy to the target, run the smoke queries, and update the README + ARCHITECTURE runbook entry.`,
+      ],
+      solution: `Freeze check in anonymous Apex:
+ReleaseManagementService.isInFreezeWindow(Date.newInstance(2026,12,18), Date.newInstance(2026,12,25));
+// returns true when today falls inside the window
+
+Backup: Setup → Data Export → Export Now; store the ZIP and record the sfdx-project.json sourceApiVersion.
+Dry run:
+sf project deploy start --check-only --source-dir force-app/main/default --target-org scratch-org --wait 15
+
+Deploy + verify: rerun without --check-only, then the smoke query above. Close the loop by documenting who/what/when — the Setup Audit Trail records every click, and README.md + ARCHITECTURE.md become the recreate-any-piece runbook.`,
     },
   ],
   quiz: {
@@ -1239,6 +1812,64 @@ Map<String, Integer> mix = CertificationPrepService.questionMix(bank);` },
     [SELECT Id FROM Training_Question__c], 10)` },
         { t: 'selfcheck', q: `What is the deterministic advantage of buildQuiz?`, a: `Same bank + same size → same quiz — reproducible flaky-pick debugging in QA.` },
       ]
+    },
+  ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Quiz yourself with a mock drive', level: 'Easy', mins: 10,
+      brief: `Use the shipped question bank as your practice engine — no excuses.`,
+      steps: [
+        `Run the bank coverage query to find thin domains and missing difficulty levels.`,
+        `Build a 10-question quiz with CertificationPrepService.buildQuiz.`,
+        `Score it with recordQuizResult and write down your result against your Study Plan.`,
+      ],
+      solution: `Bank coverage:
+SELECT Topic__c, Difficulty__c, COUNT(Id) n
+FROM Training_Question__c
+GROUP BY Topic__c, Difficulty__c ORDER BY n DESC
+
+Build a quiz (deterministic: same bank + same size = same quiz):
+List<Training_Question__c> quiz =
+    CertificationPrepService.buildQuiz([SELECT Id FROM Training_Question__c], 10);
+CertificationPrepService.recordQuizResult(planId, 7, 10);
+
+Aim: every blueprint domain (Configuration & Setup, Object Manager, etc.) has Easy + Medium + Hard coverage. Fill gaps by adding Training_Question__c rows directly, then re-quiz to prove coverage.`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Map your blueprint to a weekly plan', level: 'Easy', mins: 10,
+      brief: `Design the six weeks leading to the exam using the blueprint weights as a calendar.`,
+      steps: [
+        `Which two domains together cover ≈50% of the exam? Give them weeks 1–2.`,
+        `Weeks 3–4: cover the remaining domains in order of weight.`,
+        `Week 5: mock quizzes + gap fixes, tracked on Study_Plan__c.`,
+        `Week 6: pressure drills (100 questions in 90 min) plus review of every selfcheck block you missed.`,
+      ],
+      solution: `Configuration & Setup (~25%) + Object Manager & Lightning App Builder (~24%) = ≈50%. Give them weeks 1–2 (Phases 2–4).
+Week 3: Service & Support + Data & Analytics (~30%).
+Week 4: Productivity & Collaboration + Sales & Marketing (~21%).
+Week 5: weekly mocks logged on Study_Plan__c — track Completed_Domains__c and fire recordQuizResult after every pass.
+Week 6: pressure drills, 100 questions in 90 minutes, re-read every selfcheck block in the roadmap. Register at webassessor.com, book the slot, and walk in with the confidence the labs gave you.`,
+    },
+    {
+      n: 3, type: 'project', title: 'Mini Project — Your 6-week exam plan', level: 'Medium', mins: 20,
+      brief: `Build a Study_Plan__c, seed questions, and model your first two mock exams.`,
+      steps: [
+        `Create a Study_Plan__c: Certification = 'Salesforce Administrator', Hours_Per_Week = 10, target date six weeks out.`,
+        `Start it with CertificationPrepService.startStudyPlan so Completed_Domains__c is stamped.`,
+        `Add Training_Question__c rows until every blueprint domain has Easy + Medium + Hard representation.`,
+        `Log your first two mocks with recordQuizResult and confirm the trajectory toward 65%.`,
+      ],
+      solution: `Anonymous Apex:
+Study_Plan__c plan = CertificationPrepService.startStudyPlan(
+    UserInfo.getUserId(), Date.today().addDays(42), 10);
+
+Build and log mock results:
+List<Training_Question__c> quiz =
+    CertificationPrepService.buildQuiz([SELECT Id FROM Training_Question__c], 10);
+// answer the questions offline
+CertificationPrepService.recordQuizResult(plan.Id, correctCount, quiz.size());
+
+The exam facts live here too: 100 questions, 105 minutes, ~65% passing, ~$200, register at webassessor.com. Study_Plan__c is your dashboard; the question bank is your mirror — both track whether you're ready, not just whether you "feel" ready.`,
     },
   ],
   quiz: {

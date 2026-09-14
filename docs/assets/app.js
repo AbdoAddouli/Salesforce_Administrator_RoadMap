@@ -858,6 +858,22 @@ function bindTopSearch() {
   });
 }
 
+/* ------------------------- theme toggle ------------------------- */
+const THEME_KEY = 'theme';
+const savedTheme = (() => { try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; } })();
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  const b = $('#themeBtn');
+  if (b) b.textContent = t === 'dark' ? '☀️' : '🌙';
+  b && (b.title = t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+}
+applyTheme(savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+const themeBtn = $('#themeBtn');
+if (themeBtn) themeBtn.addEventListener('click', () => {
+  applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+});
+
 /* ------------------------- lazy event (hashchange) ------------------------- */
 window.addEventListener('hashchange', () => { route = parseHash(); render(); });
 

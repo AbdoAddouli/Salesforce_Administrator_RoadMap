@@ -1,0 +1,55 @@
+// ============================================
+// SOQL Practice Queries - Phase 14: Project Solutions
+// ============================================
+// The post-build verification set for the whole capstone.
+// After comparing your build to a reference solution and fixing the gaps,
+// every query below must return what its comment promises. That is how
+// you know Phase 13 is genuinely done.
+
+// 1. Sales pipeline, proven: stages exist and nothing meaningful is stuck
+SELECT StageName, COUNT(Id) deals, SUM(Amount) value
+FROM Opportunity
+GROUP BY StageName
+ORDER BY SUM(Amount) DESC
+
+// 2. The 40% discount cap actually works at the data layer
+SELECT Id, Name, Max_Discount__c, StageName
+FROM Opportunity
+WHERE Max_Discount__c > 40
+
+// 3. Backlog escaping automation: cases that survived 2 days untouched
+SELECT Id, Subject, Status, Priority, CreatedDate
+FROM Case
+WHERE Status != 'Closed' AND CreatedDate < LAST_N_DAYS:2
+  AND Id NOT IN (SELECT WhatId FROM Task WHERE Status != 'Completed')
+
+// 4. Migration integrity: target count matches the source, forever
+SELECT COUNT(Id) accounts
+FROM Account
+
+// 5. Duplicate count is zero after the merge + matching rules
+SELECT Name, COUNT(Id) n
+FROM Account
+GROUP BY Name
+HAVING COUNT(Id) > 1
+
+// 6. Attribution is single-sourced: one primary campaign per opportunity
+SELECT CampaignId, Campaign.Name, COUNT(Id) influenced_opps
+FROM OpportunityContactRole
+WHERE IsPrimary = true
+GROUP BY CampaignId, Campaign.Name
+
+// 7. ROI: the webinar beat the ads spend, visibly
+SELECT Name, Campaign_Cost__c, Influenced_Revenue__c,
+       Influenced_Revenue__c - Campaign_Cost__c roi
+FROM Campaign
+WHERE Influenced_Revenue__c != NULL
+
+// 8. Security: nobody should be 90+ days idle anymore
+SELECT UserName, UserRole.Name, IsActive, LastLoginDate
+FROM User
+WHERE IsActive = true AND LastLoginDate < LAST_N_DAYS:90
+
+// 9. FLS proof is done outside SOQL: log in as an agent profile and run
+//    SELECT Name, Revenue, Bank_Account__c FROM Account LIMIT 1
+//    The sensitive fields must come back null (the column-level check).

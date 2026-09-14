@@ -130,7 +130,7 @@ function renderSidebar() {
   aside.innerHTML = `
     <div class="side-brand">
       <div class="logo">☁️</div>
-      <div><b>Admin Academy</b><span>12-phase roadmap</span></div>
+      <div><b>Admin Academy</b><span>${MODULES.length}-phase roadmap</span></div>
     </div>`;
 
   const nav = document.createElement('nav');
@@ -204,7 +204,7 @@ function renderHome() {
         <div class="hero-actions">
           <button class="btn primary" id="startBtn">${next ? '▶ Continue learning' : '🎉 Restart'}</button>
           <button class="btn ghost" id="phasesBtn">Browse all phases</button>
-          <span class="hero-meta">📅 ~12 phases · self-paced</span>
+          <span class="hero-meta">📅 ~${MODULES.length} phases · self-paced</span>
         </div>
       </div>
       <div class="ring-wrap">

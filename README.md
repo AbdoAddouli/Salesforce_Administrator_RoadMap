@@ -1,6 +1,6 @@
 # Salesforce Administration RoadMap
 
-A complete, hands-on learning roadmap to master **Salesforce Administration** — from zero to certification-ready — using real SFDX metadata, Apex automation, practice SOQL, and a 12-phase structured study plan.
+A complete, hands-on learning roadmap to master **Salesforce Administration** — from zero to certification-ready — using real SFDX metadata, Apex automation, practice SOQL, and a 14-phase structured study plan.
 
 ![Salesforce CLI](https://img.shields.io/badge/Salesforce%20CLI-✓-00A1E0?logo=salesforce)
 ![API Version](https://img.shields.io/badge/API%20Version-68.0-00A1E0)
@@ -19,9 +19,9 @@ This repository is a **learning lab**, not just documentation. Every concept cov
 > - Developers who want Real Apex, triggers, flows, and event-driven patterns
 > - Anyone prepping for the **Salesforce Administrator** certification
 
-> **Scope** — The full admin lifecycle: data model → security → users → data ops → automation (Flows + Approvals) → Sales & Service apps → analytics → release management → certification prep.
+> **Scope** — The full admin lifecycle: data model → security → users → data ops → automation (Flows + Approvals) → Sales & Service apps → analytics → release management → certification prep → 5 real-world capstone projects.
 
-> **Duration** — 12 phases, self-paced (each phase = one study + labs unit on a repeatable weekly cadence).
+> **Duration** — 14 phases, self-paced (each phase = one study + labs unit on a repeatable weekly cadence; the last two phases are the hands-on capstone).
 
 ---
 
@@ -37,12 +37,13 @@ Curious how it all fits together? See **[ARCHITECTURE.md](./ARCHITECTURE.md)** f
 
 > **🎮 Interactive version** — explore the roadmap live at
 > **[`https://abdoaddouli.github.io/Salesforce_Administrator_RoadMap/`](https://abdoaddouli.github.io/Salesforce_Administrator_RoadMap/)**
-> built from `docs/` (clickable phases, lessons, quizzes, progress tracking, and a
-> **🧪 Exercises & Mini Projects** section per phase with dropdown solutions).
+> built from `docs/` (clickable phases, lessons, quizzes, progress tracking,
+> **🧪 Exercises & Mini Projects** per phase, and a **🏗️ Real-World Projects**
+> capstone whose solutions are gated behind a "did you try it first?" prompt).
 
 ---
 
-## 🧭 The 12-Phase Learning Roadmap
+## 🧭 The 14-Phase Learning Roadmap
 
 | Phase | Topic | Guide | Key Concepts |
 |------:|-------|-------|--------------|
@@ -58,6 +59,8 @@ Curious how it all fits together? See **[ARCHITECTURE.md](./ARCHITECTURE.md)** f
 | 10 | **Analytics** | [10-analytics.md](./admin%20Roadmap/10-analytics.md) | Report formats, folders, dashboards, SOQL mirror |
 | 11 | **Sandboxes & Release Management** | [11-release-mgmt.md](./admin%20Roadmap/11-release-mgmt.md) | Sandbox types, SFDX deployments, runbooks |
 | 12 | **Certification Prep** | [12-certification-prep.md](./admin%20Roadmap/12-certification-prep.md) | Administrator exam blueprint, question bank, study plans |
+| 13 | **Real-World Projects** | [13-real-world-projects.md](./admin%20Roadmap/13-real-world-projects.md) | 5 capstone builds: sales pipeline, service ops, data migration, campaign ROI, security + releases |
+| 14 | **Project Solutions** | [14-project-solutions.md](./admin%20Roadmap/14-project-solutions.md) | Gated worked answers + verification queries for the 5 capstone builds |
 
 Each guide follows the same structure: **core concepts → hands-on labs → practice quiz → SOQL practice** to build skills incrementally.
 
@@ -113,20 +116,36 @@ sf data query --query "SELECT Name, Status__c, Due_Date__c FROM Admin_Task__c LI
 
 Plus [`scripts/apex/service-invocation.apex`](./scripts/apex/service-invocation.apex) walking through every service from the Developer Console.
 
-### 🧪 Exercises & Mini Projects (36 hands-on tasks)
+### 🧪 Exercises & Mini Projects (43 gated tasks across all 14 phases)
 
-Each of the 12 phases ships **2 exercises + 1 mini project** so you apply what you just learned — not just read about it.
+Each of the 12 learning phases ships **2 exercises + 1 mini project** so you apply what you just learned — not just read about it.
 
 - **24 exercises** — quick, focused tasks (pick field types, write validation-rule formulas, classify flow types, pick the sandbox, audit approvals in SOQL…)
 - **12 mini projects** — build real things: deploy the RoadMap, run a journaled migration batch, rebuild the `Case_Escalation_Task` flow from scratch, build a Vacation-Request approval process, design a 6-week exam plan…
 
-Every task has a **brief, numbered steps, type + difficulty badges** (Easy / Medium / Hard) and a **"Show solution" dropdown button** that reveals the worked answer — including the exact SOQL / Apex snippets — so you can check your work after trying.
+Every task has a **brief, numbered steps, type + difficulty badges** (Easy / Medium / Hard) and a **gated "Show solution" button** that opens a "did you try it first?" prompt before revealing the worked answer — including the exact SOQL / Apex snippets — so you can check your work after trying.
 
 > **🔍 Where it lives**
 > - Data: `exercises[]` inside each phase in [`docs/assets/curriculum.js`](./docs/assets/curriculum.js)
-> - Renderer + dropdown: `renderExercises()` / `renderSol()` in [`docs/assets/app.js`](./docs/assets/app.js)
+> - Renderer + gate: `renderExercises()` / `wireExercises()` in [`docs/assets/app.js`](./docs/assets/app.js)
 > - Styling: exercise cards & solution panels in [`docs/assets/style.css`](./docs/assets/style.css)
 > - **Try them live** on the interactive site: every phase page → 🧪 Exercises & Mini Projects
+
+### 🏗️ Real-World Projects (Phase 13) — the capstone
+
+Five end-to-end builds that **fuse every skill from Phases 1–12** — this is practice, not theory. Each project starts from a business brief and ends with acceptance criteria you prove in SOQL:
+
+1. **Sales Pipeline from Scratch** — object model, validation rules, roles + sharing, champion-call Flow, >100k approval, pipeline dashboards
+2. **Service & Support Operations** — record types, queues + assignment, 24h SLA milestones, 12-hour escalation Flow, Knowledge, close guardrails
+3. **Data Migration & Dedupe** — External-ID upserts (idempotent), import validation, journaled batches, duplicate + matching rules
+4. **Marketing Attribution & Lead Nurturing** — campaigns, Campaign Influence, nurture Flow, Budget FLS, campaign ROI
+5. **Security Posture & Change Management** — OWD matrix, sharing rules, field-level security, login audit, sandbox → tests → promote
+
+Each project ships a **"done when" checklist** and a query set in [`scripts/soql/real-world-projects.soql`](./scripts/soql/real-world-projects.soql). Full walkthrough: [`admin Roadmap/13-real-world-projects.md`](./admin%20Roadmap/13-real-world-projects.md).
+
+### 📘 Project Solutions (Phase 14) — gated worked answers
+
+The reference solutions to all five capstone projects — **deliberately gated** behind the same "did you try it first?" prompt, so the loop stays *attempt → verify → compare → fix → re-verify*. Each solution shows the exact schema, validation formulas, security decisions, Flow wiring and the post-build verification queries. See [`admin Roadmap/14-project-solutions.md`](./admin%20Roadmap/14-project-solutions.md) and [`scripts/soql/project-solutions.soql`](./scripts/soql/project-solutions.soql).
 
 ---
 
@@ -192,7 +211,7 @@ All test classes use `@TestSetup` + `@isTest` and assert real business behavior 
 │   ├── dashboards/         # 4 dashboards (reference metadata)
 │   ├── platformEvents/     # Data_Migration_Event__e
 │   └── customMetadata/     # Admin_Configuration__mdt record
-├── admin Roadmap/          # 12 phase study guides (the actual curriculum)
+├── admin Roadmap/          # 14 phase study guides (including the capstone)
 ├── scripts/soql/           # One practice query file per phase
 ├── scripts/apex/           # Anonymous Apex playgrounds
 ├── config/                 # Scratch org definition
@@ -211,6 +230,8 @@ Phase 12 bundles everything into certification prep for the **Salesforce Adminis
 - Blueprint: Configuration & Setup ~25% · Object Manager & Lightning App Builder ~24% · Service & Support ~15% · Data & Analytics ~15% · Productivity & Collaboration ~11% · Sales & Marketing ~10%
 
 Use `Training_Question__c` as a mini question bank and `CertificationPrepService` as a quiz engine to build your own practice exams.
+
+Then prove it for real: **Phase 13** hands you five end-to-end business builds and **Phase 14** holds the gated reference solutions — the closest thing this RoadMap has to a job sim.
 
 ---
 

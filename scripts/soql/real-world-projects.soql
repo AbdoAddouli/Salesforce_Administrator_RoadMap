@@ -1,0 +1,117 @@
+// ============================================
+// SOQL Practice Queries - Phase 13: Real-World Projects
+// ============================================
+// The capstone acceptance audit. Every build ends with a query that
+// proves the requirement is met. Run these in Developer Console ->
+// Query Editor BEFORE opening Phase 14's gated solutions.
+
+// ------------------------------------------------------------------
+// Build 1 - Sales Pipeline: what does the funnel actually look like?
+// ------------------------------------------------------------------
+
+// 1. Pipeline by stage (the entry point of the dashboard)
+SELECT StageName, COUNT(Id) deals, SUM(Amount) value
+FROM Opportunity
+GROUP BY StageName
+ORDER BY SUM(Amount) DESC
+
+// 2. Discount guardrail audit: any deal that breaks the 40% cap?
+SELECT Id, Name, Max_Discount__c, StageName
+FROM Opportunity
+WHERE Max_Discount__c > 40
+
+// 3. Territory roll-up: opportunities by region your managers see
+SELECT Account.Sales_Territory__r.Region__c, COUNT(Id) deals, SUM(Amount) value
+FROM Opportunity
+GROUP BY Account.Sales_Territory__r.Region__c
+
+// 4. Has every Closed Won deal been through the champion call?
+SELECT Id, Name, StageName, LastModifiedDate
+FROM Opportunity
+WHERE StageName = 'Closed Won'
+
+// ------------------------------------------------------------------
+// Build 2 - Service: is the backlog actually working itself down?
+// ------------------------------------------------------------------
+
+// 5. Cases older than 2 days with no completed task == they escaped automation
+SELECT Id, Subject, Status, Priority, CreatedDate
+FROM Case
+WHERE Status != 'Closed' AND CreatedDate < LAST_N_DAYS:2
+  AND Id NOT IN (SELECT WhatId FROM Task WHERE Status != 'Completed')
+
+// 6. SLA exposure: how many open cases are past their first-response target?
+SELECT Id, CaseNumber, Priority, CreatedDate
+FROM Case
+WHERE Status != 'Closed' AND CreatedDate < LAST_N_DAYS:1
+
+// 7. Queue health: open cases by priority for the escalation report
+SELECT Priority, RecordType.Name, COUNT(Id) backlog
+FROM Case
+WHERE Status != 'Closed'
+GROUP BY Priority, RecordType.Name
+ORDER BY Priority
+
+// ------------------------------------------------------------------
+// Build 3 - Migration: did a single row get lost or duplicated?
+// ------------------------------------------------------------------
+
+// 8. Integrity: does target count match your source count?
+SELECT COUNT(Id) accounts
+FROM Account
+
+// 9. Duplicate check (the CEO's nightmare, in one query)
+SELECT Name, COUNT(Id) n
+FROM Account
+GROUP BY Name
+HAVING COUNT(Id) > 1
+
+// 10. Quality: records flagged after import as needing attention
+SELECT Id, Name, Validation_Status__c, Data_Quality_Score__c
+FROM Account
+WHERE Validation_Status__c = 'Needs Attention'
+
+// 11. Migration journal: source vs target per batch, for the audit trail
+SELECT Name, Source_Count__c, Target_Count__c, Status__c
+FROM Data_Migration_Batch__c
+ORDER BY CreatedDate DESC
+
+// ------------------------------------------------------------------
+// Build 4 - Marketing: which campaign is actually paying for itself?
+// ------------------------------------------------------------------
+
+// 12. Attribution: which campaign influenced each opportunity?
+SELECT CampaignId, Campaign.Name, COUNT(Id) influenced_opps
+FROM OpportunityContactRole
+WHERE IsPrimary = true
+GROUP BY CampaignId, Campaign.Name
+
+// 13. ROI table: cost vs influenced revenue, the kill-or-fund verdict
+SELECT Name, Campaign_Cost__c, Influenced_Revenue__c
+FROM Campaign
+WHERE Influenced_Revenue__c != NULL
+
+// 14. Nurture health: who responded and never engaged again (still cold)?
+SELECT LeadId, Campaign.Name, Status
+FROM CampaignMember
+WHERE Status = 'Responded'
+
+// ------------------------------------------------------------------
+// Build 5 - Security: does the auditor's checklist pass?
+// ------------------------------------------------------------------
+
+// 15. Inactive users: anyone who should have been deactivated 90 days ago
+SELECT UserName, UserRole.Name, IsActive, LastLoginDate
+FROM User
+WHERE IsActive = true AND LastLoginDate < LAST_N_DAYS:90
+
+// 16. Login volume spike (review with login history - who is hammering the org?)
+SELECT COUNT(Id), UserName
+FROM LoginHistory
+GROUP BY UserName
+ORDER BY COUNT(Id) DESC
+LIMIT 5
+
+// 17. The auditor's own page: what can a plain user actually read?
+// (Log in as the agent profile and re-run query #8 - sensitive fields
+//  must come back null when you SELECT them on Account.)

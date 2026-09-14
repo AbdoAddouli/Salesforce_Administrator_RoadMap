@@ -1,6 +1,6 @@
 /* =============================================================================
  * Admin Academy — Curriculum data
- * 12 phases following the 'admin Roadmap/' guides. Content is condensed from
+ * 14 phases following the 'admin Roadmap/' guides. Content is condensed from
  * the phase guides and points back to the real repo artifacts.
  * ============================================================================= */
 
@@ -1885,6 +1885,424 @@ The exam facts live here too: 100 questions, 105 minutes, ~65% passing, ~$200, r
         opts: [`A study plan`, `A list of questions`, `A report`, `A workflow rule`], a: 1, why: `It slices the bank into a deterministic quiz of the requested size.` },
       { q: `Which trigger stamps Completed_Domains__c on a new Study Plan?`,
         opts: [`UserTrigger`, `StudyPlanTrigger`, `AdminTaskTrigger`, `SecurityAuditTrigger`], a: 1, why: `StudyPlanTrigger writes '(none)' before the record is inserted.` },
+    ]
+  }
+},
+
+/* ─────────────────────────── PHASE 13 ─────────────────────────── */
+{
+  id: 'proj', n: 13, title: 'Real-World Projects', icon: '🏗️', color: '#EF4444',
+  tagline: 'Five end-to-end builds that fuse every skill',
+  guide: '13-real-world-projects.md',
+  art: [
+    { label: 'Full deployable metadata', href: 'force-app/main/default' },
+    { label: 'Objects + fields reference', href: 'force-app/main/default/objects' },
+    { label: 'Flows reference', href: 'force-app/main/default/flows' },
+    { label: 'Projects SOQL set', href: 'scripts/soql/real-world-projects.soql' },
+  ],
+  objectives: [
+    'Translate a business brief into a Salesforce configuration, not the other way round',
+    'Combine data model, security, automation, data ops, analytics and releases in one build',
+    'Self-verify each project against its acceptance criteria before peeking at solutions',
+    'Practice the build → validate → demo cycle employers actually pay for',
+  ],
+  lessons: [
+    {
+      title: 'Build 1 · Sales Pipeline from Scratch', mins: 45,
+      blocks: [
+        { t: 'h', x: 'The business story' },
+        { t: 'p', x: `Salt & Pine is a 40-person B2B software company that has been "managing" deals in spreadsheets. They hand you a blank Developer Edition org and one sentence: "give sales one pipeline we can all trust, from the first meeting to Closed Won." Everything you built in Phases 1–6, 8 and 10 goes into this.` },
+        { t: 'callout', kind: 'tip', x: `What this fuses: Phase 1 (app + navigation), Phase 2 (object model + validation), Phases 3–4 (security), Phases 6–7 (Flow + approvals), Phase 5 (data hygiene), Phase 8 (stages / sales process), Phase 10 (pipeline analytics).` },
+        { t: 'h', x: 'Build it' },
+        { t: 'num', items: [
+          `Configure the Sales app: App Manager → edit Sales → shape navigation for Reps, Managers and the VP.`,
+          `Shape the deal: add Opportunity fields Deal_Type__c (picklist New / Expansion / Renewal), Max_Discount__c (%), Commission_Forecast__c, Lost_Reason__c, Champion_Name__c.`,
+          `Create a custom object Sales_Territory__c with Region (picklist EMEA / AMER / APAC) and a Manage User lookup; link it from Account.`,
+          `Validate (Object Manager → Opportunity → Validation Rules): Max_Discount__c ≤ 40; Lost_Reason__c required when closed lost; Amount > 0 on Closed Won.`,
+          `Secure it: a Sales Rep profile with no FLS on Commission_Forecast__c, a Sales Manager role above Reps, and a sharing rule that opens a territory's accounts to its manager's team.`,
+          `Automate it: a record-triggered Flow that stamps a "Call the champion" task when Stage becomes Proposal; an approval process that routes deals over 100k to the VP.`,
+          `Load data: 20 accounts + 30 opportunities via Data Import Wizard; add a duplicate rule on Account (Name + Phone) and merge one test duplicate.`,
+          `Prove it: Pipeline by Stage, Won vs Lost and Weighted Pipeline dashboards with three widgets (reuse the AnalyticsService logic from Phase 10).`,
+        ]},
+        { t: 'h', x: 'Acceptance — done when' },
+        { t: 'list', items: [
+          `A Rep logs in, sees only their own pipeline, and creates a deal from a Lead in under two minutes.`,
+          `A Manager sees the team pipeline through the role hierarchy; the VP sees everything.`,
+          `No deal closes above 40% discount — the validation rule blocks it at save time.`,
+          `Every won deal got its champion called within 24 hours of the Proposal stage.`,
+          `A double-click on Account names in the pipeline report shows zero duplicates.`,
+        ]},
+        { t: 'selfcheck', q: `Where do you hide one field from one profile without touching the object?`, a: `Field-Level Security — Object Manager → the object → Fields & Relationships → Field Accessibility, or Profile → Field Permissions.` },
+      ]
+    },
+    {
+      title: 'Build 2 · Service & Support Operations', mins: 40,
+      blocks: [
+        { t: 'h', x: 'The business story' },
+        { t: 'p', x: `Northwind Support sells a 24/5 support plan. Cases arrive by phone, email and web and currently rot in a shared inbox. Build a service org: route work, enforce an SLA, escalate stuck tickets, and show ops where the backlog lives. Fuses Phases 3, 4, 6, 9 and 10.` },
+        { t: 'h', x: 'Build it' },
+        { t: 'num', items: [
+          `Cases: set Status values (New, Assigned, Working, Escalated, Closed) and add Resolution_Notes__c, First_Response_Hours__c and Product__c.`,
+          `Record types + picklists: Phone, Email and Web record types that drive routing and page layouts.`,
+          `Queues + assignment: a Support queue per priority; an assignment rule that drops High-priority cases into the right queue.`,
+          `Entitlement + SLA: a 24-hour entitlement with a "First response" milestone linked to accounts on the plan.`,
+          `Automate: a record-triggered Flow that creates an escalation task for the on-call manager when a case passes 12 hours without resolution; an email alert when a case is created.`,
+          `Knowledge: publish three articles (reset password, license key, billing query) and add the Knowledge component to the case layout.`,
+          `Guardrails: a validation rule that prevents closing a case that still has open tasks; require Resolution_Notes__c on closed cases.`,
+          `Prove it: dashboards for case volume by record type, average age and open-by-priority; export a Case_Operations-style report from Phase 9.`,
+        ]},
+        { t: 'h', x: 'Acceptance — done when' },
+        { t: 'list', items: [
+          `A web case lands in the right queue within a minute, not in an inbox.`,
+          `Every plan account's case carries the 24-hour first-response milestone.`,
+          `A 12-hour-old open case automatically escalates to the on-call manager.`,
+          `Agents can close a case only with resolution notes and zero open tasks.`,
+          `The ops dashboard shows today's backlog by priority in one glance.`,
+        ]},
+        { t: 'selfcheck', q: `Which two Setup tools route cases to queues based on record values?`, a: `Queues (to hold the work) + Assignment Rules (to put records into them by priority/record type).` },
+      ]
+    },
+    {
+      title: 'Build 3 · Data Migration & Dedupe', mins: 45,
+      blocks: [
+        { t: 'h', x: 'The business story' },
+        { t: 'p', x: `Globex moves from an old CRM. The CEO says: "Move us over, don't lose a row, and don't create 400 duplicate accounts." You own the migration. Fuses Phases 5, 6, 7, 10 and 11.` },
+        { t: 'h', x: 'Build it' },
+        { t: 'num', items: [
+          `Plan: add an External ID field Legacy_Id__c to Account, Contact and Opportunity.`,
+          `Prepare: a normalization pass on the source file — strip spaces from Legacy_Id__c, trim names (the DataManagementService from Phase 5 does exactly this).`,
+          `Spot-check the target schema: run the sample SOQL from Phase 5 before loading a single row.`,
+          `Load: Data Loader upsert keyed on Legacy_Id__c — 100 accounts, then 150 contacts, then 120 opportunities.`,
+          `Validate the import: after insert, a Flow flags records missing Owner, Phone or Website by stamping Validation_Status__c = Needs Attention.`,
+          `Journal it: create a Data_Migration_Batch__c record logging source count, target count and status — the journaled-batch pattern from Phase 5.`,
+          `Dedupe: duplicate rules with matching rules (Account: Name + Phone, then Website); merge the flagged set; re-run a duplicate-count report.`,
+          `Prove it: a Data Migration Summary report (records in, flagged, merged, % clean) plus a data-quality dashboard.`,
+        ]},
+        { t: 'h', x: 'Acceptance — done when' },
+        { t: 'list', items: [
+          `Every legacy row exists exactly once: source count = target count and duplicate count = 0.`,
+          `Nothing lost its history: field history shows no overwritten External IDs.`,
+          `Duplicate accounts are merged and the new matching rules block repeats.`,
+          `The migration batch journaled its progress for the audit trail.`,
+          `You can replay the whole load from scratch in under an hour (the proof of an idempotent design).`,
+        ]},
+        { t: 'selfcheck', q: `Why upsert by External ID instead of by record Id during a migration?`, a: `Record Ids are per-org and never match the source system. An External ID is a stable, idempotent upsert key — the classic exam trap.` },
+      ]
+    },
+    {
+      title: 'Build 4 · Marketing Attribution & Lead Nurturing', mins: 40,
+      blocks: [
+        { t: 'h', x: 'The business story' },
+        { t: 'p', x: `Aforma runs webinars and Google Ads and wants to finally know which one actually makes money — and to stop buying leads that go cold. Fuses Phases 3, 4, 6, 8 and 10.` },
+        { t: 'h', x: 'Build it' },
+        { t: 'num', items: [
+          `Campaign structure: create campaigns (2026 Spring Webinar, Google Search — Competitor Terms) with member statuses Sent, Responded, Converted, Accepted.`,
+          `Lead lifecycle: configure Lead Sources and Status values; set the conversion mapping to create Account / Contact / Opportunity.`,
+          `Influence: enable Campaign Influence, set the primary-campaign model, and add the influenced-opportunity fields.`,
+          `Nurture: a Flow that takes Responded webinar leads into a "Nurture — Product Updates" campaign, schedules an email alert, and bumps them up a level when they engage again.`,
+          `Security: hide Budget__c on Campaign from reps via field-level security.`,
+          `Prove it: a Campaign ROI report (cost vs influenced revenue by campaign) and a lead-conversion funnel dashboard.`,
+        ]},
+        { t: 'h', x: 'Acceptance — done when' },
+        { t: 'list', items: [
+          `Every converted opportunity shows which campaign influenced it.`,
+          `The webinar campaign reports positive ROI; the ads campaign is visibly justified or killed.`,
+          `Nurtured leads re-engage without human hand-holding.`,
+          `Reps cannot see campaign budgets; marketers can — through the right profiles only.`,
+        ]},
+        { t: 'selfcheck', q: `Which Setup toggle lets one campaign claim credit for an opportunity's revenue?`, a: `Campaign Influence (Setup → Campaign Influence). The primary-campaign model caps attribution to a single campaign.` },
+      ]
+    },
+    {
+      title: 'Build 5 · Security Posture & Change Management', mins: 45,
+      blocks: [
+        { t: 'h', x: 'The business story' },
+        { t: 'p', x: `A serious org: "Our auditor wants proof nobody saw revenue they shouldn't, and your boss wants changes shipped with tests, not surprises." You own security and release discipline. Fuses Phases 2, 3, 4 and 11.` },
+        { t: 'h', x: 'Build it' },
+        { t: 'num', items: [
+          `OWD baseline: Accounts and Cases Private; document the sharing matrix (object × org-wide default × role × sharing rule).`,
+          `Sharing: role hierarchy plus one sharing rule that opens the EMEA territory to its manager; build your own export-approval by reusing the Data_Export_Approval pattern from Phase 7.`,
+          `Field-level security: hide Revenue, Bank_Account__c and Commission from agents; prove it via Profile → Field Accessibility.`,
+          `User controls: login hours + IP ranges for the support team; delegated admin for the helpdesk (Phase 4).`,
+          `Audit loop: enable login history and run the SecurityService candidate check — flag users inactive 90 days and review login frequency.`,
+          `Change management: create a Developer sandbox, deploy a candidate change set / SFDX package, run the full test suite, then promote within a release-freeze window (Phase 11).`,
+          `Prove it: a security-posture report (OWD map, FLS gaps, inactive users) plus the release runbook entry.`,
+        ]},
+        { t: 'h', x: 'Acceptance — done when' },
+        { t: 'list', items: [
+          `A support agent querying Account sees Revenue and Bank_Account__c disappear completely.`,
+          `The EMEA manager sees their team's accounts only through the sharing rule — the matrix proves it.`,
+          `Login history shows exactly who signed in, when and from where — and inactive users are flagged.`,
+          `A change moved UI → sandbox → full tests → production with zero failed deployments and a runbook note.`,
+        ]},
+        { t: 'selfcheck', q: `A record is Private and a sharing rule grants access. What can still hide a field from that user?`, a: `Field-level security. Sharing controls row access; FLS controls column access — and FLS applies on top.` },
+      ]
+    },
+  ],
+  exercises: [
+    {
+      n: 1, type: 'exercise', title: 'Acceptance audit — run the five checklists', level: 'Medium', mins: 20,
+      brief: `Before you open Phase 14, prove each project with SOQL. If anything fails, that query is your next task.`,
+      steps: [
+        `Open Developer Console → Query Editor and run the pipeline check from Build 1.`,
+        `Run the service-backlog check: cases older than 12 hours with no active task.`,
+        `Run the migration-integrity check: source count vs target count, then the duplicate count.`,
+        `Run the security check: inactive-user candidates and their last login dates.`,
+      ],
+      solution: `Your acceptance queries:
+\`\`\`
+SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName
+
+SELECT Id, Subject, Status, CreatedDate
+FROM Case
+WHERE Status != 'Closed' AND CreatedDate < LAST_N_DAYS:2
+  AND Id NOT IN (SELECT WhatId FROM Task WHERE Status != 'Completed')
+
+SELECT COUNT(Id) FROM Account
+SELECT Name, COUNT(Id) n FROM Account GROUP BY Name HAVING COUNT(Id) > 1
+
+SELECT UserName, UserRole.Name, IsActive, LastLoginDate
+FROM User WHERE IsActive = true AND LastLoginDate < LAST_N_DAYS:90
+\`\`\`
+Any unexpected row is a fix-queue item. Do not open Phase 14 until every query returns what your build promised.`,
+    },
+    {
+      n: 2, type: 'exercise', title: 'Traceability — map every deliverable to the phase that taught it', level: 'Easy', mins: 10,
+      brief: `Prove the capstone really fuses the roadmap. For each Phase-13 deliverable below, name the phase (1–12) and the exact skill you used.`,
+      steps: [
+        `A validation rule that blocks a bad amount.`,
+        `A sharing rule that opens a territory.`,
+        `A record-triggered Flow creating a task.`,
+        `An upsert keyed on an External ID.`,
+        `A ratio of campaign cost to influenced revenue.`,
+      ],
+      solution: `Any defensible mapping is fine; the canonical one:
+\`\`\`
+Validation rule ........... Phase 2  (Object Manager & Data Model)
+Sharing rule .............. Phase 3  (Security Model) + Phase 4 (roles/queues)
+Record-triggered Flow ..... Phase 6  (Automation — Flows)
+Upsert by External ID ..... Phase 5  (Data Management)
+Campaign ROI .............. Phase 8  (Sales & Marketing) + Phase 10 (Analytics)
+\`\`\`
+If your traceability matrix has a blind spot — a deliverable you chose but never formally learned — you just found your next study topic.`,
+    },
+  ],
+  quiz: {
+    title: 'Phase 13 Quiz · Real-World Projects', mins: 5,
+    questions: [
+      { q: `Which combination of tools turns "can't close above a 40% discount" into enforcement?`,
+        opts: [`A flow`, `A validation rule`, `An approval process`, `A report`], a: 1, why: `Validation rules reject bad data at save time — that is enforcement at the data layer.` },
+      { q: `In Build 2, what routes an inbound Case into the right work queue?`,
+        opts: [`Campaign influence`, `Queues + assignment rules`, `A validation rule`, `A role hierarchy`], a: 1, why: `Assignment rules place records into queues based on their values (record type, priority).` },
+      { q: `Which key makes a Data Loader upsert idempotent in Build 3?`,
+        opts: [`Record Id`, `External ID`, `Owner Id`, `AutoNumber`], a: 1, why: `External IDs are stable across systems; record Ids are per-org and never the source key.` },
+      { q: `Which feature answers "which campaign produced this deal's revenue"?`,
+        opts: [`Campaign Influence`, `Assignment rules`, `Dashboards`, `Field history`], a: 0, why: `Campaign Influence (with the primary model) attributes an opportunity to one campaign.` },
+      { q: `In Build 5, what proves a change was safe to promote?`,
+        opts: [`A dashboard`, `Full tests in a sandbox before deploying`, `Login history`, `A sharing rule`], a: 1, why: `Release discipline = sandbox, run the test suite, then promote inside a freeze window.` },
+    ]
+  }
+},
+
+/* ─────────────────────────── PHASE 14 ─────────────────────────── */
+{
+  id: 'sol', n: 14, title: 'Project Solutions', icon: '📘', color: '#22C55E',
+  tagline: 'Gated worked answers for the five builds',
+  guide: '14-project-solutions.md',
+  art: [
+    { label: 'Service classes reference', href: 'force-app/main/default/classes' },
+    { label: 'Certification prep service', href: 'force-app/main/default/classes/CertificationPrepService.cls' },
+    { label: 'Solutions SOQL set', href: 'scripts/soql/project-solutions.soql' },
+    { label: 'Reports + dashboards', href: 'force-app/main/default/reports' },
+  ],
+  objectives: [
+    'Compare your five builds against staff-level reference solutions',
+    'Read the schema, security and automation decisions behind each project',
+    'Re-derive the exact Flows, SOQL and dashboard specs that answer each brief',
+    'Grade yourself against the acceptance criteria and name the gaps to fix',
+  ],
+  lessons: [
+    {
+      title: 'How to Use This Phase', mins: 8,
+      blocks: [
+        { t: 'p', x: `Phase 13 asked you to build five projects. This phase holds the reference solutions — deliberately gated behind a "have you tried it?" prompt so the learning loop stays yours: attempt → verify → compare → fix.` },
+        { t: 'table', head: ['Project', 'Solution card'], rows: [
+          ['Build 1 · Sales Pipeline', 'Solution — Sales Pipeline'],
+          ['Build 2 · Service & Support', 'Solution — Service Operations'],
+          ['Build 3 · Migration & Dedupe', 'Solution — Migration'],
+          ['Build 4 · Campaign ROI', 'Solution — Attribution'],
+          ['Build 5 · Security + Releases', 'Solution — Security Posture'],
+        ]},
+        { t: 'callout', kind: 'tip', x: `Rule of the loop: (1) attempt the build, (2) run the acceptance queries, (3) only then open the matching card below, (4) score yourself 1–5 per acceptance criterion and fix anything ≤ 3, (5) re-verify with the same query.` },
+        { t: 'selfcheck', q: `Why are these solutions gated instead of one-button reveals?`, a: `The capstone's value is the attempt. The gate keeps the try-first, verify, compare, fix loop intact — the pattern you designed in Phase 13.` },
+      ]
+    },
+  ],
+  exercises: [
+    {
+      n: 1, type: 'project', title: 'Solution — Build 1 · Sales Pipeline from Scratch', level: 'Hard', mins: 30,
+      brief: `The Salt & Pine sales org: compare your object model, security and automation against a staff-level reference build, then fix the gaps.`,
+      steps: [
+        `Run the five acceptance queries from Phase 13 in Developer Console.`,
+        `Compare each component below with your own: validation rules, roles + sharing, champion-call Flow, >100k approval, dashboards.`,
+        `Score yourself 1–5 per component, rebuild anything ≤ 3, and re-run the queries.`,
+      ],
+      solution: `Acceptance queries:
+\`\`\`
+SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName
+SELECT Id, Name, Max_Discount__c FROM Opportunity WHERE Max_Discount__c > 40
+\`\`\`
+
+Objects & fields — what "clean" looks like:
+- Opportunity: Deal_Type__c (New / Expansion / Renewal), Max_Discount__c (%), Commission_Forecast__c, Lost_Reason__c, Champion_Name__c.
+- Sales_Territory__c: Region (EMEA / AMER / APAC), Manage User lookup; Account gets a territory lookup.
+
+Validation rules (the enforcement layer — never flows, flows cannot stop a direct save):
+- MaxDiscount: NOT(ISBLANK(Max_Discount__c)) && Max_Discount__c > 40
+- LostReasonRequired: ISPICKVAL(StageName, 'Closed Lost') && ISPICKVAL(Lost_Reason__c, '')
+- WonAmountPositive: ISPICKVAL(StageName, 'Closed Won') && (Amount = 0 || Amount < 0)
+
+Security:
+- Sales_Rep profile: no FLS on Commission_Forecast__c (column-level hide).
+- Sales_Manager role above Reps → the role hierarchy rolls the pipeline up.
+- Sharing rule: Accounts where Territory.Manage = the EMEA Manager → grant Read/Write to the EMEA team (lateral access the hierarchy cannot do).
+
+Automation:
+- Flow "Champion Call": record-triggered, fired when StageName changes to Proposal → Create Task (Subject = 'Call the champion', Due = today).
+- Approval "Deal > 100k": entry criteria Amount > 100000 on a pending close → assignee = submitter's manager, final = VP.
+
+Dashboards (3 widgets is the ask): Pipeline by Stage (bar), Won vs Lost (pie), Weighted pipeline by territory (donut).
+
+The traps that matter: discount cap is a validation rule; commission hiding is FLS not profile deletion; role hierarchy = roll-up; sharing rules = lateral.`,
+    },
+    {
+      n: 2, type: 'project', title: 'Solution — Build 2 · Service & Support Operations', level: 'Hard', mins: 30,
+      brief: `The Northwind service org: check routing, entitlements, escalation and guardrails against the reference, then close your gaps.`,
+      steps: [
+        `Run the service-backlog acceptance query from Phase 13.`,
+        `Compare queues/assignment, the 24h milestone, the 12-hour escalation Flow, Knowledge and the close guardrails.`,
+        `Score 1–5 per component, fix anything ≤ 3, and re-verify with the query.`,
+      ],
+      solution: `Backlog check:
+\`\`\`
+SELECT Id, Subject, Status, CreatedDate
+FROM Case WHERE Status != 'Closed' AND CreatedDate < LAST_N_DAYS:2
+  AND Id NOT IN (SELECT WhatId FROM Task WHERE Status != 'Completed')
+\`\`\`
+
+Routing: one Support queue per priority; an assignment rule places new cases by Record Type + Priority into the correct queue. Record types (Phone / Email / Web) drive both the layouts and the routing.
+
+Entitlement & SLA: a 24-hour entitlement with a "First response" milestone, attached to account Entitlements so only plan accounts carry the SLA.
+
+Escalation (the 12-hour rule lives in a Flow, not a task):
+- Record-triggered Flow on Case → gets Status. On creation start a paused check; 12 hours later (Scheduled path / waiting), if Status is still not Closed → Create Task for the on-call manager (escalation), Status = Escalated, email alert. Time-based branching is Flow territory — assignment rules cannot sleep.
+
+Knowledge: 3 published articles (reset password, license key, billing) + the Knowledge component on the case record page. Agents resolve without re-asking.
+
+Guardrails (validation, not politeness):
+- ClosedReserved: an open Task still related → block close.
+- ResolutionNotesRequired: ISPICKVAL(Status,'Closed') && ISBLANK(Resolution_Notes__c) → block.
+
+Dashboards: Case volume by record type (bar), Average age (line), Open by priority (pie).
+
+The trap: the escalation is a time-dependent Flow, not an assignment rule or an approval — time-bound logic belongs to Flow.`,
+    },
+    {
+      n: 3, type: 'project', title: 'Solution — Build 3 · Data Migration & Dedupe', level: 'Hard', mins: 30,
+      brief: `The Globex migration: compare your idempotent load, journaling and dedupe against the reference, then fix the gaps.`,
+      steps: [
+        `Run the integrity + duplicate acceptance queries from Phase 13.`,
+        `Compare the External-ID schema, Data Loader mappings, batch journal, and duplicate/matching rules.`,
+        `Score 1–5 per component and re-verify.`,
+      ],
+      solution: `Integrity checks:
+\`\`\`
+SELECT COUNT(Id) FROM Account
+SELECT Name, COUNT(Id) n FROM Account GROUP BY Name HAVING COUNT(Id) > 1
+\`\`\`
+
+Schema: External ID Legacy_Id__c on Account, Contact and Opportunity — the single source of truth for loading (never record Ids, they do not survive migrations).
+
+Data Loader maps (two passes to prove idempotency):
+- Accounts: Upsert keyed on Legacy_Id__c → then Contacts, then Opportunities (child after parent — None for owner-based lookups first, reparent later).
+- Re-run the same file: nothing changes (that is the idempotency proof).
+
+Import validation: after upload, a Flow stamps Validation_Status__c = Needs Attention for records missing Owner, Phone or Website; a report lists them for the fix pass.
+
+Journaling: Data_Migration_Batch__c holds Source_Count__c, Target_Count__c, Status__c and Start/End timestamps — same pattern the DataMigrationService uses to script a replayable batch (Phase 5).
+
+Dedupe: duplicate rules with matching rules (Name + Phone, then Website) on Account. Merge the flagged set via the standard merge flow so history survives; then confirm HAVING COUNT(Id) > 1 returns nothing.
+
+The trap: the merge must keep the master record's External ID — otherwise replaying the load resurrects the duplicate.`,
+    },
+    {
+      n: 4, type: 'project', title: 'Solution — Build 4 · Marketing Attribution & Lead Nurturing', level: 'Hard', mins: 30,
+      brief: `The Aforma attribution build: compare campaigns, influence, the nurture Flow and ROI reporting against the reference, then fix.`,
+      steps: [
+        `Run the campaign-influence + ROI checks (which opportunity names its campaign, what do the reports say).`,
+        `Compare campaign structure, member statuses, the nurture Flow and the Budget FLS.`,
+        `Score 1–5 per component and re-verify.`,
+      ],
+      solution: `Attribution checks:
+\`\`\`
+SELECT CampaignId, Campaign.Name, COUNT(Id)
+FROM OpportunityContactRole WHERE IsPrimary = true GROUP BY CampaignId, Campaign.Name
+SELECT Name, Influenced_Revenue__c, Campaign_Cost__c FROM Campaign
+\`\`\`
+
+Campaign structure: 2026 Spring Webinar + Google Search — Competitor Terms, with member statuses Sent → Responded → Converted → Accepted that mirror the real funnel.
+
+Influence: enable Campaign Influence with the primary-campaign model — one campaign per opportunity. Add Influenced_Revenue__c + Campaign_Cost__c to Campaign for the ROI math.
+
+Nurture Flow: record-triggered on CampaignMember when Status = Responded → add the member to "Nurture — Product Updates", schedule a follow-up email alert, and escalate a level when they re-engage (open or click). Cold leads are not written off — they are warmed.
+
+Security: Budget__c hidden from the sales profiles with field-level security only; the marketing profile retains access.
+
+Reporting: Campaign ROI = influenced revenue vs cost, one row per campaign — the data that ends or funds the ads spend. Conversion funnel dashboard shows Lead → MQL → Opportunity → Closed Won.
+
+The trap: without the primary model enabled, multiple campaigns can claim one opportunity and the ROI math double-counts revenue.`,
+    },
+    {
+      n: 5, type: 'project', title: 'Solution — Build 5 · Security Posture & Change Management', level: 'Hard', mins: 30,
+      brief: `The auditor-ready org: compare your OWD matrix, FLS, audit loop and release discipline against the reference, then fix.`,
+      steps: [
+        `Run the FLS + inactive-user acceptance queries from Phase 13.`,
+        `Compare the OWD matrix, sharing rules, delegated admin, login controls and the promotion runbook.`,
+        `Score 1–5 per component and re-verify.`,
+      ],
+      solution: `Security checks:
+\`\`\`
+SELECT UserName, UserRole.Name, IsActive, LastLoginDate
+FROM User WHERE IsActive = true AND LastLoginDate < LAST_N_DAYS:90
+\`\`\`
+(FLS is proven by logging in as an agent and running SELECT on Account — sensitive fields return null.)
+
+OWD baseline: Accounts and Cases Private. Documented matrix: object × OWD × role hierarchy × sharing rules, signed off by the auditor.
+
+Rows: role hierarchy rolls up within a territory; one sharing rule opens EMEA accounts to the EMEA manager's team. Reuse the Data_Export_Approval pattern for any sensitive export.
+
+Columns: FLS hides Revenue, Bank_Account__c and Commission from agent profiles. Proof = Profile → Field Accessibility shows X (deny).
+
+Users: login hours + IP ranges on the support team; delegated admin hands off user management to the helpdesk. The audit loop (Phase 3) flags 90-day-inactive users for deactivation.
+
+Release discipline (Phase 11): Developer sandbox → candidate change set / SFDX package → run the full test suite → promote inside a documented freeze window → post-deploy verification queries in the runbook.
+
+The traps: sharing governs rows, FLS governs columns (always check both); a release is not done until the post-promotion verification query passes.`,
+    },
+  ],
+  quiz: {
+    title: 'Phase 14 Quiz · Project Solutions', mins: 5,
+    questions: [
+      { q: `Which single pattern enforces a 40% max discount at save time?`,
+        opts: [`A permission set`, `A validation rule`, `A role hierarchy`, `Campaign Influence`], a: 1, why: `Validation rules reject the save; nothing else coerces data at the database layer.` },
+      { q: `In the Service Operations solution, why a Flow for the 12-hour escalation?`,
+        opts: [`Flows own time-based thresholds`, `Flows replace approvals`, `Assignment rules handle timeouts`, `Tasks cannot be automated`], a: 0, why: `The escalation fires on elapsed time — time-based branching is Flow territory.` },
+      { q: `Which detail guarantees a replay of the migration never double-loads a row?`,
+        opts: [`AutoNumber`, `Upsert keyed on the External ID`, `Duplicate rules`, `Field history`], a: 1, why: `Idempotent upserts keyed on Legacy_Id__c make re-runs safe by construction.` },
+      { q: `What made the ROI verdict ("webinar wins, ads dies") trustworthy in Build 4?`,
+        opts: [`Login history`, `Primary-campaign influence + cost vs influenced revenue`, `Approval processes`, `A role hierarchy`], a: 1, why: `One-campaign attribution prevents double-counting revenue in the cost comparison.` },
+      { q: `What proves a promoted change was safe, per the Security Posture solution?`,
+        opts: [`A sharing rule`, `Full tests in a sandbox + post-promotion verification`, `A duplicate report`, `Field history`], a: 1, why: `Release discipline = sandbox tests → promote → verify with the runbook query.` },
     ]
   }
 },

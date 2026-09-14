@@ -359,6 +359,39 @@ function renderModule(mod) {
 
   const jumpEx = $('#jumpEx');
   if (jumpEx) jumpEx.addEventListener('click', () => scrollToId('exercises'));
+  wireExercises();
+}
+
+function wireExercises() {
+  $$('.ex-card').forEach(card => {
+    const btn = card.querySelector('.ex-toggle');
+    const gate = card.querySelector('.sol-gate');
+    const sol = card.querySelector('.ex-solution');
+    const chv = btn.querySelector('.chv');
+    const setOpen = open => {
+      sol.hidden = !open;
+      card.classList.toggle('open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      chv.textContent = open ? '▴' : '▾';
+      btn.firstChild.textContent = open ? 'Hide solution ' : 'Show solution ';
+    };
+    btn.addEventListener('click', () => {
+      if (card.dataset.revealed === 'true') { setOpen(sol.hidden); return; }
+      gate.hidden = false;
+      btn.style.display = 'none';
+    });
+    gate.querySelector('.gate-yes').addEventListener('click', () => {
+      card.dataset.revealed = 'true';
+      gate.hidden = true;
+      btn.style.display = '';
+      setOpen(true);
+    });
+    gate.querySelector('.gate-no').addEventListener('click', () => {
+      gate.hidden = true;
+      btn.style.display = '';
+      toast('Nice — no peeking! 👏 Try the exercise first, then come back for the solution.');
+    });
+  });
 }
 
 function scrollToId(id) {
@@ -500,33 +533,42 @@ function renderExercises(mod) {
         <div class="ex-head-icon">🧪</div>
         <div>
           <h2>Exercises &amp; Mini Projects</h2>
-          <p class="ex-sub">${exCount} hands-on tasks. Try each one first, then reveal the solution with the button below.</p>
+          <p class="ex-sub">${exCount} hands-on tasks. Try each one in your org first — solutions are gated so nothing spoils your practice.</p>
         </div>
       </div>
       ${mod.exercises.map(ex => {
         const lvl = levels[ex.level] || 'ex-level';
         const badge = ex.type === 'project' ? '<span class="ex-type-badge project">project</span>' : '<span class="ex-type-badge exercise">exercise</span>';
         return `
-        <details class="ex-card">
-          <summary class="ex-summary">
-            <span class="ex-meta-line">
+        <div class="ex-card" data-revealed="false">
+          <div class="ex-summary">
+            <div class="ex-meta-line">
               <span class="ex-num">#${ex.n}</span>
               ${badge}
               <span class="${lvl}">${ex.level}</span>
               <span class="ex-mins">${ex.mins} min</span>
-            </span>
-            <span class="ex-title">${esc(ex.title)}</span>
-            <span class="ex-toggle" aria-hidden="true">Show solution ▾</span>
-          </summary>
+            </div>
+            <div class="ex-title-row">
+              <span class="ex-title">${esc(ex.title)}</span>
+              <button class="ex-toggle" type="button" aria-expanded="false">Show solution <span class="chv">▾</span></button>
+            </div>
+          </div>
           <div class="ex-body">
             <p class="ex-brief">${esc(ex.brief)}</p>
             <ol class="ex-steps">${ex.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
-            <div class="ex-solution">
+            <div class="sol-gate" hidden>
+              <p class="gate-msg">🧑‍💻 Did you try this yourself before peeking? Attempting it first is how you actually learn Salesforce.</p>
+              <div class="gate-actions">
+                <button class="btn sm primary gate-yes" type="button">Yes — I've attempted it. Show solution</button>
+                <button class="btn sm ghost gate-no" type="button">No, let me keep trying</button>
+              </div>
+            </div>
+            <div class="ex-solution" hidden>
               <div class="ex-sol-head">Solution</div>
               <div class="ex-sol-body">${renderSol(ex.solution)}</div>
             </div>
           </div>
-        </details>`;
+        </div>`;
       }).join('')}
     </div>`;
 }

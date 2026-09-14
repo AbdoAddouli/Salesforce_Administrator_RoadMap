@@ -37,7 +37,8 @@ Curious how it all fits together? See **[ARCHITECTURE.md](./ARCHITECTURE.md)** f
 
 > **🎮 Interactive version** — explore the roadmap live at
 > **[`https://abdoaddouli.github.io/Salesforce_Administrator_RoadMap/`](https://abdoaddouli.github.io/Salesforce_Administrator_RoadMap/)**
-> built from `docs/` (clickable phases, lessons, quizzes, progress tracking).
+> built from `docs/` (clickable phases, lessons, quizzes, progress tracking, and a
+> **🧪 Exercises & Mini Projects** section per phase with dropdown solutions).
 
 ---
 
@@ -111,6 +112,21 @@ sf data query --query "SELECT Name, Status__c, Due_Date__c FROM Admin_Task__c LI
 ```
 
 Plus [`scripts/apex/service-invocation.apex`](./scripts/apex/service-invocation.apex) walking through every service from the Developer Console.
+
+### 🧪 Exercises & Mini Projects (36 hands-on tasks)
+
+Each of the 12 phases ships **2 exercises + 1 mini project** so you apply what you just learned — not just read about it.
+
+- **24 exercises** — quick, focused tasks (pick field types, write validation-rule formulas, classify flow types, pick the sandbox, audit approvals in SOQL…)
+- **12 mini projects** — build real things: deploy the RoadMap, run a journaled migration batch, rebuild the `Case_Escalation_Task` flow from scratch, build a Vacation-Request approval process, design a 6-week exam plan…
+
+Every task has a **brief, numbered steps, type + difficulty badges** (Easy / Medium / Hard) and a **"Show solution" dropdown button** that reveals the worked answer — including the exact SOQL / Apex snippets — so you can check your work after trying.
+
+> **🔍 Where it lives**
+> - Data: `exercises[]` inside each phase in [`docs/assets/curriculum.js`](./docs/assets/curriculum.js)
+> - Renderer + dropdown: `renderExercises()` / `renderSol()` in [`docs/assets/app.js`](./docs/assets/app.js)
+> - Styling: exercise cards & solution panels in [`docs/assets/style.css`](./docs/assets/style.css)
+> - **Try them live** on the interactive site: every phase page → 🧪 Exercises & Mini Projects
 
 ---
 

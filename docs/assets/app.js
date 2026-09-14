@@ -64,9 +64,11 @@ function byId(id) { return MODULES.find(m => m.id === id); }
 /* ------------------------- routing ------------------------- */
 
 let route = { view: 'home', mid: null, li: null };
+let pendingScroll = null;
 
-function navigate(view, mid, li) {
+function navigate(view, mid, li, scrollTo) {
   route = { view, mid, li: li != null ? li : null };
+  pendingScroll = scrollTo || null;
   history.replaceState(null, '', '#' + hashFor());
   render();
 }
@@ -104,10 +106,21 @@ function render() {
   if (tbar) tbar.style.width = overallPct() + '%';
   bindTopSearch();
 
-  if (r.view === 'phase')  return renderModule(mod);
-  if (r.view === 'lesson') return renderLesson(mod, Math.min(Number(r.li) || 0, mod.lessons.length - 1));
-  if (r.view === 'quiz')   return renderQuiz(mod);
+  if (r.view === 'phase')  { renderModule(mod); finishRender(); return; }
+  if (r.view === 'lesson') { renderLesson(mod, Math.min(Number(r.li) || 0, mod.lessons.length - 1)); finishRender(); return; }
+  if (r.view === 'quiz')   { renderQuiz(mod); finishRender(); return; }
   renderHome();
+  finishRender();
+}
+
+function finishRender() {
+  if (pendingScroll) {
+    requestAnimationFrame(() => {
+      const el = document.getElementById(pendingScroll);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    });
+    pendingScroll = null;
+  }
 }
 
 /* ------------------------- sidebar ------------------------- */
@@ -160,6 +173,7 @@ function renderSidebar() {
 function renderHome() {
   const op = overallPct();
   const totalLessons = MODULES.reduce((a, m) => a + m.lessons.length, 0);
+  const totalEx = MODULES.reduce((a, m) => a + (m.exercises || []).length, 0);
   const totalMin = MODULES.reduce((a, m) => a + m.lessons.reduce((x, l) => x + l.mins, 0), 0) + MODULES.reduce((a, m) => a + m.quiz.mins, 0);
   const totalDone = MODULES.reduce((a, m) => a + moduleProgress(m.id).earned, 0);
   const totalUnits = MODULES.reduce((a, m) => a + moduleProgress(m.id).units, 0);
@@ -186,7 +200,7 @@ function renderHome() {
       <div>
         <div class="hero-kicker">Salesforce Administration · study from zero</div>
         <h1 class="hero-title">Become <span class="grad">cert-ready</span>, phase by phase.</h1>
-        <p class="hero-sub">${MODULES.length} guided modules, ${totalLessons} lessons, ${MODULES.length} quizzes — with real metadata in the repo to deploy and practice on.</p>
+        <p class="hero-sub">${MODULES.length} guided modules, ${totalLessons} lessons, ${MODULES.length} quizzes and ${totalEx} exercises &amp; mini projects — with real metadata in the repo to deploy and practice on.</p>
         <div class="hero-actions">
           <button class="btn primary" id="startBtn">${next ? '▶ Continue learning' : '🎉 Restart'}</button>
           <button class="btn ghost" id="phasesBtn">Browse all phases</button>
@@ -225,7 +239,7 @@ function renderHome() {
         <h3>3 wins today</h3>
         <ul class="tips">
           <li>Finish <b>one lesson</b> then take its phase quiz.</li>
-          <li>Re-create flows / reports in your own org.</li>
+          <li>Do the 🧪 <b>exercise</b> &amp; mini project on each phase page.</li>
           <li>Use <kbd>/</kbd> to search anything.</li>
         </ul>
       </div>
@@ -259,7 +273,7 @@ function renderHome() {
         <div class="mc-sub">${p.done}/${p.total} lessons · ${p.quizPct}% quiz</div>
       </div>
       <div class="mc-foot">
-        <span>${m.lessons.length} lessons · ${m.quiz.questions.length} quiz</span>
+        <span>${m.lessons.length} lessons · ${(m.exercises || []).length} exercises · ${m.quiz.questions.length} quiz</span>
         <span class="mc-arrow">→</span>
       </div>`;
     grid.appendChild(card);
@@ -291,6 +305,7 @@ function renderModule(mod) {
         </div>
         <a class="btn ghost sm" target="_blank" rel="noopener"
            href="${GUIDE}${mod.guide}">📄 Full guide on GitHub</a>
+        <button class="btn ghost sm" id="jumpEx" style="width:100%;margin-top:8px">🧪 Exercises &amp; Mini Projects</button>
       </div>
     </div>
 
@@ -341,6 +356,14 @@ function renderModule(mod) {
         ? `<a class="btn primary" href="#/phase/${MODULES[mod.n].id}">${MODULES[mod.n].title} →</a>`
         : `<a class="btn primary" href="#/quiz/${mod.id}">🎯 Take the final quiz</a>`}
     </div>`;
+
+  const jumpEx = $('#jumpEx');
+  if (jumpEx) jumpEx.addEventListener('click', () => scrollToId('exercises'));
+}
+
+function scrollToId(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
 }
 
 /* ------------------------- lesson page ------------------------- */
@@ -365,6 +388,9 @@ function renderLesson(mod, li) {
         <a href="#/quiz/${mod.id}" class="toc-item toc-quiz" style="--c:${mod.color}">
           <span class="toc-state">🧠</span><span>Module quiz</span>
         </a>
+        <a href="#/phase/${mod.id}" class="toc-item toc-ex" style="--c:${mod.color}">
+          <span class="toc-state">🧪</span><span>Exercises &amp; Mini Projects</span>
+        </a>
       </aside>
 
       <article class="lesson article">
@@ -385,6 +411,7 @@ function renderLesson(mod, li) {
               : `<button class="btn primary" id="doneBtn">✓ Mark lesson complete</button>`}
           </div>
           <div class="lf-right">
+            <button class="btn ghost sm" id="exBtn">🧪 Exercises</button>
             ${prevI != null ? `<a class="btn ghost sm" href="#/lesson/${mod.id}/${prevI}">← Prev</a>` : ''}
             ${nextI != null
               ? `<a class="btn primary sm" href="#/lesson/${mod.id}/${nextI}">Next →</a>`
@@ -397,6 +424,9 @@ function renderLesson(mod, li) {
   const b = $('#doneBtn'); const u = $('#unbtn');
   if (b) b.addEventListener('click', () => { markDone(mod.id, li, true); store.lastOpen = { mid: mod.id, li }; save(); toast('Lesson complete! 🎉'); render(); });
   if (u) u.addEventListener('click', () => { markDone(mod.id, li, false); render(); });
+  const exBtn = $('#exBtn');
+  if (exBtn) exBtn.addEventListener('click', () => navigate('phase', mod.id, null, 'exercises'));
+  $$('.toc-ex').forEach(a => a.addEventListener('click', e => { e.preventDefault(); navigate('phase', mod.id, null, 'exercises'); }));
   store.lastOpen = { mid: mod.id, li }; save();
   requestAnimationFrame(() => window.scrollTo(0, 0));
 }
@@ -465,7 +495,7 @@ function renderExercises(mod) {
   const exCount = mod.exercises.length;
   const levels = { 'Easy': 'ex-level easy', 'Medium': 'ex-level med', 'Hard': 'ex-level hard' };
   return `
-    <div class="exercises reveal" style="--c:${mod.color}">
+    <div class="exercises reveal" id="exercises" style="--c:${mod.color}">
       <div class="ex-head">
         <div class="ex-head-icon">🧪</div>
         <div>

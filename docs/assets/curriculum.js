@@ -24,17 +24,21 @@ const ACADEMY = [
     'Describe objects, fields, records & relationships',
     'Distinguish declarative vs programmatic configuration',
   ],
-  lessons: [
+lessons: [
     {
-      title: 'The Administrator Role', mins: 8,
+      title: 'What is a Salesforce Administrator?', mins: 8,
       blocks: [
-        { t: 'p', x: `A Salesforce Administrator configures, maintains, and optimizes an org. You are the bridge between the business and the platform: salesops wants a dashboard, legal wants an audit trail, support wants a new picklist value — you deliver it.` },
-        { t: 'list', items: [`Setup (gear icon) — the admin backend`, `Object Manager — create and shape objects`, `Flows, Validation Rules and Reports — the declarative stack`, `Security Controls — profiles, permission sets, OWD`, `Data tools — Data Import Wizard, Data Loader, duplicates`] },
-        { t: 'table', head: ['', 'Declarative', 'Programmatic'], rows: [
-          ['Tooling', 'Flows, Validation Rules, Permission Sets', 'Apex triggers & classes, LWC'],
-          ['Skills', 'Click-not-code configuration', 'Code + governor limits'],
-          ['Share of admin work', '80%+ of everyday tasks', 'Complex logic & integrations'],
+        { t: 'p', x: `A Salesforce Administrator configures, maintains, and optimizes an org. You are the bridge between the business and the platform: salesops asks for a dashboard, support wants a new picklist value, legal needs an audit trail — and you deliver it.` },
+        { t: 'h', x: 'The Admin Toolkit' },
+        { t: 'list', items: [
+          `Setup — the admin backend reached from the gear icon in the top right`,
+          `Object Manager — create and shape standard and custom objects`,
+          `Flows — automate business processes without code`,
+          `Reports & Dashboards — turn data into decisions`,
+          `Data Tools — Data Import Wizard, Data Loader, duplicate management`,
+          `Security Controls — profiles, permission sets, sharing rules, field-level security`,
         ]},
+        { t: 'callout', kind: 'tip', x: `The Salesforce Administrator exam (~$200, 100 questions, 105 minutes, 65% to pass) tests exactly these skills. Register at webassessor.com and book 4+ weeks out.` },
         { t: 'selfcheck', q: `Which is nearly always the right automation default: a Flow or custom Apex?`, a: `The Flow. Flow Builder is the default automation tool; Apex is for requirements flows cannot meet.` },
       ]
     },
@@ -42,40 +46,65 @@ const ACADEMY = [
       title: 'The Core Data Model', mins: 12,
       blocks: [
         { t: 'p', x: `Everything in Salesforce is built on a data model. Think of objects as database tables, fields as columns, and records as rows. Custom objects and custom fields end in __c.` },
-        { t: 'table', head: ['Object', 'Purpose'], rows: [
-          [ 'Account', 'A company / organization you do business with' ],
-          [ 'Contact', 'A person associated with an Account' ],
-          [ 'Lead', 'An unqualified prospect' ],
-          [ 'Opportunity', 'A potential deal in the pipeline' ],
-          [ 'Case', 'A support issue' ],
-          [ 'Activity (Task/Event)', 'Reminders and meetings' ],
+        { t: 'table', head: ['Object', 'Purpose', 'Key Fields'], rows: [
+          [ 'Account', 'A company you do business with', 'Name, Industry, Annual Revenue, Billing Address' ],
+          [ 'Contact', 'A person associated with an Account', 'First/Last Name, Email, Phone, Mailing Address' ],
+          [ 'Lead', 'An unqualified prospect', 'Company, Name, Status, Lead Source' ],
+          [ 'Opportunity', 'A potential deal', 'Name, Stage, Amount, Close Date, Probability' ],
+          [ 'Case', 'A support issue', 'Subject, Status, Priority, Contact' ],
+          [ 'Activity (Task & Event)', 'Reminders and meetings on any record', 'Subject, Due Date, Status' ],
         ]},
+        { t: 'h', x: 'Relationships' },
         { t: 'code', lang: 'text', x: `Account ── 1:N ──▶ Contact
 Account ── 1:N ──▶ Opportunity
 Account ── 1:N ──▶ Case
+Opportunity ── 1:N ──▶ OpportunityLineItem (Products)
 User   ── 1:N ──▶ Tasks / Events / Study_Plans` },
-        { t: 'callout', kind: 'tip', x: `The repository ships five custom objects you'll use daily: Admin_Task__c, Security_Audit__c, Data_Migration_Batch__c, Training_Question__c and Study_Plan__c.` },
+        { t: 'h', x: "The RoadMap's Own Data Model" },
+        { t: 'table', head: ['Object', 'What it tracks'], rows: [
+          [ 'Admin_Task__c', 'The admin task board (due dates, priorities, owners)' ],
+          [ 'Security_Audit__c', 'Security findings with risk level, status and recommended action' ],
+          [ 'Data_Migration_Batch__c', 'Every import/export run (record counts, success/failure)' ],
+          [ 'Training_Question__c', 'The certification question bank (topic, difficulty, 4 options)' ],
+          [ 'Study_Plan__c', 'Per-learner certification pacing (target date, hours per week)' ],
+        ]},
+        { t: 'callout', kind: 'tip', x: `The repository ships exactly these five custom objects — you'll use them daily as a roadmapping Administrator.` },
+      ]
+    },
+    {
+      title: 'Declarative vs Programmatic', mins: 10,
+      blocks: [
+        { t: 'p', x: `Most admin work is declarative: you configure rather than code.` },
+        { t: 'table', head: ['', 'Declarative', 'Programmatic'], rows: [
+          ['Tooling', 'Flows, Validation Rules, Reports, Permission Sets', 'Apex triggers & classes, Lightning Web Components'],
+          ['Skills', 'Click-not-code configuration', 'Code + governor limits'],
+          ['Share of admin work', '80%+ of everyday tasks', 'Complex logic & integrations'],
+        ]},
+        { t: 'p', x: `The RoadMap shows both: the 8 flows and all the validation rules in this repository are declarative; the 21 Apex classes (10 services + 11 tests) are programmatic, and the thin triggers simply delegate to them.` },
+        { t: 'callout', kind: 'warn', x: `The exam expects you to know when to use which — Flow Builder is almost always the right default; use Apex only for what flows cannot express.` },
+        { t: 'selfcheck', q: `Which approach fits "call an external REST service and parse JSON inside a transaction"?`, a: `Programmatic (Apex). Flows can call invocable Apex, but the parsing itself lives in code.` },
       ]
     },
     {
       title: 'Navigation & Setup Habits', mins: 10,
       blocks: [
-        { t: 'list', items: [
-          `App Launcher (waffle) — switch between apps (Sales, Service, Admin Academy)`,
-          `Setup (gear icon) — use Quick Find: it finds anything`,
+        { t: 'num', items: [
+          `App Launcher (waffle icon) — switch between apps (Sales, Service, Admin Academy)`,
+          `Setup (gear icon) — search with the Quick Find box: it finds anything. Get-ChildItem force-app is your offline version of the metadata.`,
           `Object Manager — the metadata home of every object`,
+          `Record pages — the Dynamic Forms surface your fields`,
           `Developer Console — Query Editor, Anonymous Apex, debug logs`,
         ]},
-        { t: 'p', x: `Salesforce releases three times a year (Spring, Summer, Winter). This repository targets API version 68.0 throughout — sfdx-project.json, class & trigger metas, flows and the manifest.` },
+        { t: 'p', x: `Salesforce ships three major releases per year (Spring, Summer, Winter). Every phase in this RoadMap assumes your org is on a recent API version (68.0) — set in sfdx-project.json, class & trigger metas, flows and the manifest.` },
         { t: 'selfcheck', q: `Where do you go to create a new custom field on Account?`, a: `Setup → Object Manager → Account → Fields & Relationships → New.` },
       ]
     },
     {
-      title: 'Hands-On Labs', mins: 20,
+      title: 'Hands-On Labs: Deploy, Explore, Query', mins: 20,
       blocks: [
         { t: 'h', x: 'Lab 1 — Deploy or connect' },
         { t: 'num', items: [
-          `Read README.md, then ARCHITECTURE.md to see the layering`,
+          `If you only have this repo: open README.md, then ARCHITECTURE.md to see the layering`,
           `If you have a scratch/DEV org: sf project deploy start --source-dir force-app/main/default`,
           `Log in, open the App Launcher and browse Setup`,
         ]},
@@ -83,10 +112,30 @@ User   ── 1:N ──▶ Tasks / Events / Study_Plans` },
         { t: 'num', items: [
           `Object Manager → Admin_Task__c → Fields & Relationships`,
           `Note the AutoNumber AT-{00000} and the 8 task fields`,
-          `Inspect Security_Audit__c, Training_Question__c, Study_Plan__c`,
+          `Find Data_Migration_Batch__c, Security_Audit__c, Training_Question__c, Study_Plan__c`,
+          `Check the Admin_Configuration__mdt custom metadata record (5 org-wide guardrails)`,
         ]},
-        { t: 'h', x: 'Lab 3 — Run SOQL' },
+        { t: 'h', x: 'Lab 3 — Run your first SOQL' },
         { t: 'code', lang: 'sql', x: `SELECT Name, Task_Type__c, Status__c, Due_Date__c FROM Admin_Task__c LIMIT 10` },
+        { t: 'p', x: `Then open scripts/soql/fundamentals.soql and run queries 1–5.` },
+      ]
+    },
+    {
+      title: 'Key Terms Glossary', mins: 6,
+      blocks: [
+        { t: 'table', head: ['Term', 'Definition'], rows: [
+          [ 'Org', 'Your Salesforce instance and all its configuration and data' ],
+          [ 'Metadata', 'The configuration of your org (objects, fields, flows, code)' ],
+          [ 'Declarative', 'Clicks-not-code configuration' ],
+          [ 'Programmatic', 'Code-based development (Apex, LWC)' ],
+          [ 'SObject', 'Any Salesforce object — standard or custom (__c)' ],
+          [ 'CRUD', 'Create, Read, Update, Delete — record access' ],
+          [ 'FLS', 'Field-Level Security — who can see/edit a field' ],
+          [ 'Governor Limits', 'Platform quotas (query rows, DML, CPU)' ],
+          [ 'SFDX', 'The modern Salesforce developer toolchain' ],
+          [ 'API Version', 'The interface your code is compiled against (this repo: 68.0)' ],
+        ]},
+        { t: 'selfcheck', q: `What's the difference between CRUD and FLS?`, a: `CRUD is record access — who can create/read/update/delete a record. FLS is field access — who can see or edit a specific field. The two are enforced independently.` },
       ]
     },
     {
@@ -168,6 +217,12 @@ Zero rows is the correct starting state — the objects exist, and the triggers 
         opts: [`Programmatic`, `Declarative`, `Analytical`, `Administrative`], a: 1, why: `Flow Builder, validation rules and permission sets are the declarative stack.` },
       { q: `This repository targets which API version?`,
         opts: [`59.0`, `62.0`, `68.0`, `58.0`], a: 2, why: `API 68.0 across sfdx-project.json, metas, flows and the manifest.` },
+      { q: `What does CRUD stand for?`,
+        opts: [`Create, Read, Update, Delete`, `Copy, Retrieve, Upload, Download`, `Create, Review, Update, Discard`, `Connect, Refresh, Update, Delete`], a: 0, why: `CRUD = Create, Read, Update, Delete — the four record-level access operations.` },
+      { q: `Which object stores customer support issues?`,
+        opts: [`Account`, `Lead`, `Case`, `Campaign`], a: 2, why: `Case is the standard object for a support issue; Leads are prospects and Accounts are companies.` },
+      { q: `Which of these is one of the five custom objects shipped in this RoadMap?`,
+        opts: [`Campaign_Member__c`, `Security_Audit__c`, `Product__c`, `Case_Event__c`], a: 1, why: `The five RoadMap objects are Admin_Task__c, Security_Audit__c, Data_Migration_Batch__c, Training_Question__c and Study_Plan__c.` },
     ]
   }
 },

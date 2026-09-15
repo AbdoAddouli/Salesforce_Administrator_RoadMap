@@ -1,7 +1,8 @@
 /* =============================================================================
  * Admin Academy — Curriculum data
- * 14 phases following the 'admin Roadmap/' guides. Content is condensed from
- * the phase guides and points back to the real repo artifacts.
+ * 14 phases mirroring the 'admin Roadmap/' guides in full: objectives, lessons,
+ * exercises, projects and quizzes are embedded inline — the GitHub link is only
+ * a reference to the same source chapters, never a requirement.
  * ============================================================================= */
 
 const GUIDE = 'https://github.com/AbdoAddouli/Salesforce_Administrator_RoadMap/blob/main/admin%20Roadmap/';
@@ -256,6 +257,7 @@ Zero rows is the correct starting state — the objects exist, and the triggers 
           ['Training_Question__c', 'AutoNumber TRQ-{00000} + 4 options + Correct Answer'],
           ['Study_Plan__c', 'Learner + Certification + Target Date + Hours Per Week'],
         ]},
+        { t: 'callout', kind: 'tip', x: `You also ship a custom metadata type Admin_Configuration__mdt (Max Login Attempts, Alert Email, Auto Close Stale Days, Enable Login Audit, Default Report Folder) and a platform event Data_Migration_Event__e — more on both in later phases.` },
         { t: 'selfcheck', q: `A user asks for a "task number". Which field type do you choose?`, a: `AutoNumber with a format like AT-{00000} — human-readable, stable, read-only.` },
       ]
     },
@@ -467,6 +469,7 @@ SecurityService.flagMissingPermissionSets(users, assignedSets);` },
 FROM User WHERE Is_Deactivation_Candidate__c = true` },
         { t: 'code', lang: 'sql', x: `SELECT Id, Section, Action, CreatedBy.Name, CreatedDate
 FROM SetupAuditTrail ORDER BY CreatedDate DESC LIMIT 20` },
+        { t: 'p', x: `The audit objects: Security_Audit__c is the findings ledger (Risk Level: High / Medium / Low, Status, Recommended Action), and User carries Last_Security_Review__c plus Requires_Login_Review__c so a review is stamped, dated and never forgotten. The bundle lives at scripts/soql/security.soql — login history, AuthSession, LoginHistory, permission set assignments and SetupAuditTrail in one file.` },
         { t: 'selfcheck', q: `Which user fields does the audit loop use as its "flag once inside the window"?`, a: `Is_Deactivation_Candidate__c and Requires_Login_Review__c — plus Last_Security_Review__c for dating.` },
       ]
     },
@@ -611,7 +614,8 @@ Each finding carries Audit_Type__c, Risk_Level__c, Finding__c and Status__c — 
           ['Feature license', 'Features within a tier (Marketing User, Knowledge, Forecasting)'],
           ['Permission set license', 'Grants features across license types to a subset'],
         ]},
-        { t: 'code', lang: 'sql', x: `SELECT Name, TotalLicenses, UsedLicenses FROM UserLicense` },
+        { t: 'code', lang: 'sql', x: `SELECT Name, TotalLicenses, UsedLicenses
+FROM UserLicense ORDER BY TotalLicenses DESC` },
         { t: 'selfcheck', q: `A user can log in but the Marketing app is missing. First check?`, a: `Whether they hold the Marketing User feature license — not the app's tab visibility.` },
       ]
     },
@@ -636,6 +640,7 @@ Each finding carries Audit_Type__c, Risk_Level__c, Finding__c and Status__c — 
   ├── Profile Review task
   ├── Permission Set task    (attach Salesforce_Administrator where due)
   └── Ownership task` },
+        { t: 'p', x: `Each task has a purpose: Profile Review — the admin verifies the right profile (and its FLS subset); Permission Set Assignment — attach Salesforce_Administrator where due; Ownership Task — confirm record-ownership defaults before the user starts creating data.` },
         { t: 'p', x: `User_Deactivation_FollowUp reacts when IsActive flips to false and raises a Deactivation Cleanup Task so nobody forgets orphaned records.` },
         { t: 'selfcheck', q: `How many tasks does onboarding automation create, and who triggers it?`, a: `Three tasks — Profile Review, Permission Set, Ownership — created on new active users by the New User Onboarding Tasks flow.` },
       ]
@@ -748,7 +753,7 @@ The trigger stays thin — one call to applyOnboardingDefaults — and all logic
       blocks: [
         { t: 'table', head: ['Tool', 'Best for'], rows: [
           ['Data Import Wizard', 'One-offs, UI-driven, up to 50k records'],
-          ['Data Loader', 'Batches, scheduled loads, upserts with External IDs'],
+          ['Data Loader', 'Batches, scheduled loads, upserts with External IDs, API bulk calls'],
           ['Data Export', 'Monthly backups to your own archive'],
           ['Backup/Recovery vendors', 'Failsafe restores beyond the Recycle Bin window'],
           ['Duplicate Management', 'Native matching rules + merge'],

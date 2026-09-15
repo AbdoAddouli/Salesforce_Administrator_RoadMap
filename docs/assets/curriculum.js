@@ -264,11 +264,14 @@ Zero rows is the correct starting state — the objects exist, and the triggers 
       blocks: [
         { t: 'table', head: ['Type', 'Use it for', 'Trap'], rows: [
           ['Text', 'Short values', 'Max 255 chars — use Long Text for more'],
+          ['Long Text Area', 'Paragraphs, notes', 'Not available in SOQL GROUP BY / sort'],
           ['Number', 'Quantities, scores', 'Precision matters (Data Quality Score)'],
           ['Currency', 'Money', 'Amount vs formula currency fields'],
           ['Formula', 'Derived values', 'IF(IsClosed, 0, ROUND(Amount*Probability, 2))'],
           ['Date / Date-Time', 'Points in time', 'Dates have no timezone; Date-Times do'],
           ['Picklist', 'Enumerated values', 'Adds API value — use over free text'],
+          ['Checkbox', 'Yes/No flags', 'Like Duplicate_Flag__c, Consent_Given__c'],
+          ['AutoNumber', 'Sequence keys', 'Format strings like AT-{00000}'],
           ['Lookup / Master-Detail', 'Relationships', 'Master-detail cascades delete + sharing'],
         ]},
         { t: 'code', lang: 'text', x: `// The Weighted Expected Revenue formula shipped in this repo
@@ -287,6 +290,9 @@ FROM Account WHERE Id IN (SELECT AccountId FROM Opportunity)
 -- Child → Parent (dot notation)
 SELECT Name, Account.Name, Account.Industry FROM Contact WHERE AccountId != NULL` },
         { t: 'callout', kind: 'warn', x: `Roll-up summary fields only work on Master-Detail relationships — never Lookups.` },
+        { t: 'p', x: `Admins also run the "missing critical fields" query weekly — catch Contacts with neither email nor phone before you call a data set clean.` },
+        { t: 'code', lang: 'sql', x: `SELECT Name, Account.Name, Email, Phone
+FROM Contact WHERE Email = NULL AND Phone = NULL` },
         { t: 'selfcheck', q: `Get each Account with its Contacts using one query.`, a: `SELECT Name, (SELECT Name FROM Contacts) FROM Account.` },
       ]
     },
@@ -302,7 +308,7 @@ SELECT Name, Account.Name, Account.Industry FROM Contact WHERE AccountId != NULL
           ['High_Priority_Requires_Subject', 'Case', 'High priority + blank subject'],
           ['Prevent_Future_Due_On_Completion', 'Task', 'Completed task still dated in the future'],
         ]},
-        { t: 'callout', kind: 'warn', x: `Skip (don't delete) validation rules during bulk data loads where the rule doesn't apply yet — fix the data upstream instead.` },
+        { t: 'callout', kind: 'warn', x: `Skip (don't delete) validation rules during bulk data loads where the rule doesn't apply yet — fix the data upstream instead. The other classic case is sandbox seeding: validation rules can block demo data, so suspend the rule for the seed run.` },
         { t: 'selfcheck', q: `A team closes Cases without any resolution notes. Which rule do you add?`, a: `Require_Resolution_For_Closed — blocks the save when Status = Closed and the resolution is blank.` },
       ]
     },
@@ -316,6 +322,8 @@ SELECT Name, Account.Name, Account.Industry FROM Contact WHERE AccountId != NULL
           `Add External ID fields for Data Loader matches (Record_Source__c, Import_Batch_Number__c)`,
         ]},
         { t: 'callout', kind: 'tip', x: `The repo's objects carry status/audit fields (Status__c, Started_At__c, Completed_At__c) everywhere — a deliberate, reportable schema pattern.` },
+        { t: 'p', x: `When the UI and the metadata disagree, Describe returns the ground truth in one call:` },
+        { t: 'code', lang: 'apex', x: `System.debug(DataModelService.describeObjectLabel('Account'));` },
         { t: 'selfcheck', q: `Which field type best enforces a fixed set of values?`, a: `Picklist — controlled vocabulary beats free text for clean reports and dependencies.` },
       ]
     },
@@ -429,6 +437,7 @@ You just exercised the whole Phase 2 stack in one object: object → fields → 
         ]},
         { t: 'code', lang: 'text', x: `Profile (baseline)  +  Permission Set (extras)  =  User's total access` },
         { t: 'callout', kind: 'tip', x: `This repo ships Salesforce_Administrator — a 656-line permission set with object CRUD for the 5 custom objects + 7 standard ones, ~104 field permissions and tab settings.` },
+        { t: 'p', x: `Read the FieldPermissions blocks on disk — e.g. Admin_Task__c.Due_Date__c and User.Requires_Login_Review__c. That last one matters: the admin set marks Requires_Login_Review__c, Is_Deactivation_Candidate__c and Feature_License_Missing__c visible — admins see them, a Standard User profile shouldn't.` },
         { t: 'selfcheck', q: `When do you use a permission set instead of editing a profile?`, a: `Whenever you want to grant extra access to a subset of users without changing the shared baseline.` },
       ]
     },
@@ -440,8 +449,9 @@ You just exercised the whole Phase 2 stack in one object: object → fields → 
           ['Private', 'Owner + role hierarchy above'],
           ['Public Read Only', 'Everyone reads; owner writes'],
           ['Public Read/Write', 'Everyone reads and writes'],
+          ['Public Read/Write/Transfer', 'Everyone reads/writes; ownership can transfer'],
         ]},
-        { t: 'callout', kind: 'warn', x: `Sharing rules cannot be more restrictive than OWD. The classic exam question: OWD Private on Account + user below the owner's role — they cannot see the record.` },
+        { t: 'callout', kind: 'warn', x: `Sharing rules cannot be more restrictive than OWD — they only elevate. Two flavors: criteria-based ("Priority = High → share with Case Queue") and owner-based ("Owned by Role X → share with Role Y"). Classic exam question: OWD Private on Account + user below the owner's role — they cannot see the record.` },
         { t: 'selfcheck', q: `Heavy-volume high-priority Cases need a whole queue to view them. For criteria-based access you'd use…`, a: `A sharing rule based on record criteria (e.g. Priority = High → share with the Case Queue).` },
       ]
     },
@@ -455,6 +465,8 @@ List<Security_Audit__c> findings =
 SecurityService.flagMissingPermissionSets(users, assignedSets);` },
         { t: 'code', lang: 'sql', x: `SELECT Name, LastLoginDate, Is_Deactivation_Candidate__c
 FROM User WHERE Is_Deactivation_Candidate__c = true` },
+        { t: 'code', lang: 'sql', x: `SELECT Id, Section, Action, CreatedBy.Name, CreatedDate
+FROM SetupAuditTrail ORDER BY CreatedDate DESC LIMIT 20` },
         { t: 'selfcheck', q: `Which user fields does the audit loop use as its "flag once inside the window"?`, a: `Is_Deactivation_Candidate__c and Requires_Login_Review__c — plus Last_Security_Review__c for dating.` },
       ]
     },
@@ -466,6 +478,7 @@ FROM User WHERE Is_Deactivation_Candidate__c = true` },
           `Password policies — complexity, expiration, lockout`,
           `Session settings — timeout, caching, MFA`,
           `Network access — trusted IP ranges; "any IP + no MFA" is a red flag`,
+          `Auth Config — single sign-on (SSO) as the enterprise login pattern`,
           `MFA — the single most requested fix any admin implements first`,
         ]},
         { t: 'selfcheck', q: `A compliance call "only accesses Salesforce from our office". Which two profile settings enforce this?`, a: `Login Hours (allowed times) and Login IP Ranges (trusted addresses).` },
@@ -570,6 +583,9 @@ Each finding carries Audit_Type__c, Risk_Level__c, Finding__c and Status__c — 
           ['Training Progress', 'The academy progress-bar target'],
           ['Last Security Review', 'Last security audit date'],
           ['Is Deactivation Candidate', 'Stale-account flag'],
+          ['Login Source Category', 'Where they log in — Office / Remote / Unknown'],
+          ['Requires Login Review', 'Flag popped by SecurityService'],
+          ['Feature License Missing', 'License gap marker for the license audit'],
         ]},
         { t: 'selfcheck', q: `Where would a newcomer's onboarding status live?`, a: `On the User record itself — Onboarding_Status__c, stamped by the UserTrigger.` },
       ]
@@ -608,6 +624,7 @@ Each finding carries Audit_Type__c, Risk_Level__c, Finding__c and Status__c — 
           ['Public Group', 'No', 'Named set for sharing precedence'],
         ]},
         { t: 'p', x: `This repo's Case assignment rules route to High Priority Case Queue and Standard Case Queue — create both before exercising Case.assignmentRules!` },
+        { t: 'p', x: `The Admin Task board works the same way: each Admin_Task__c carries a Task_Owner__c lookup instead of a hard-tied owner, so a queue or the whole board can adopt records without reassigning ownership.` },
         { t: 'selfcheck', q: `Queue or role: which can OWN an unassigned Case?`, a: `The Queue — records sit owner-less in a queue until a member claims them.` },
       ]
     },
@@ -621,6 +638,21 @@ Each finding carries Audit_Type__c, Risk_Level__c, Finding__c and Status__c — 
   └── Ownership task` },
         { t: 'p', x: `User_Deactivation_FollowUp reacts when IsActive flips to false and raises a Deactivation Cleanup Task so nobody forgets orphaned records.` },
         { t: 'selfcheck', q: `How many tasks does onboarding automation create, and who triggers it?`, a: `Three tasks — Profile Review, Permission Set, Ownership — created on new active users by the New User Onboarding Tasks flow.` },
+      ]
+    },
+    {
+      title: 'Org Setup Checklist', mins: 12,
+      blocks: [
+        { t: 'p', x: `Before the first user logs in, the org itself needs configuration. This is the second most common interview "walk me through it" — and the fields below are nearly all standard setup screens.` },
+        { t: 'list', items: [
+          `Company Information — org name, address, fiscal year start, timezone & currency`,
+          `Business Hours and Holiday & Operating Hours — the calendars escalation and SLA logic reads`,
+          `Locales & language — default locale, timezone and currency for new users`,
+          `Notification templates — the branded emails users and admins actually receive`,
+          `Data protection & consent — records consent, EU/UK data permissions, sensitive-data marking`,
+        ]},
+        { t: 'callout', kind: 'tip', x: `Set fiscal-year start before any Opportunity is created — changing it mid-year skews forecast periods and reporting.` },
+        { t: 'selfcheck', q: `Which config MUST exist before escalation/SLA logic can calculate time?`, a: `Business Hours (with Holidays if holiday calc matters) — escalation and SLA both run on working time.` },
       ]
     },
   ],
@@ -718,6 +750,7 @@ The trigger stays thin — one call to applyOnboardingDefaults — and all logic
           ['Data Import Wizard', 'One-offs, UI-driven, up to 50k records'],
           ['Data Loader', 'Batches, scheduled loads, upserts with External IDs'],
           ['Data Export', 'Monthly backups to your own archive'],
+          ['Backup/Recovery vendors', 'Failsafe restores beyond the Recycle Bin window'],
           ['Duplicate Management', 'Native matching rules + merge'],
         ]},
         { t: 'callout', kind: 'warn', x: `Use an External ID for upserts. Standard record Ids are not upsert keys — a classic exam trap.` },
@@ -734,6 +767,14 @@ Map<String, List<Account>> collisions =
 DataManagementService.flagDuplicateAccounts(accountList);
 DataManagementService.applyValidationStatus(accountList);` },
         { t: 'p', x: `The AccountTrigger runs the flaggers on insert/update — two "ACME Corp" accounts created back-to-back set Duplicate_Flag__c on the second. Dashboards group accounts by Validation Status.` },
+        { t: 'table', head: ['Field', 'What makes it measurable'], rows: [
+          ['Data Quality Score', 'A 0–100 completeness number'],
+          ['Validation Status', 'Valid / Needs Review / Invalid'],
+          ['Duplicate Flag + Import Batch Number', 'Which run flagged it, and which load'],
+          ['Sensitive Data + Data Processed in EU', 'Account-level privacy markers'],
+          ['Consent To Process / Consent Date', 'Contact-level consent + timestamp'],
+        ]},
+        { t: 'p', x: `The Data Quality dashboard (Data_Quality_Dashboard) turns all of it into metrics — duplicates flagged, accounts by validation status, needs-review count.` },
         { t: 'selfcheck', q: `Query for duplicate account names in one shot.`, a: `SELECT LOWER(TRIM(Name)) norm, COUNT(Id) FROM Account GROUP BY LOWER(TRIM(Name)) HAVING COUNT(Id) > 1.` },
       ]
     },
@@ -872,6 +913,7 @@ Each step publishes Data_Migration_Event__e (CREATED / PROGRESS / CLOSED) throug
           ['Schedule-Triggered', 'A fixed schedule', '"Which type runs nightly?"'],
           ['Screen', 'A user interacts', 'Wizards, approvals UX'],
           ['Autolaunched', 'Called by Apex / API / another flow', 'Reusable event-style logic'],
+          ['Platform Event-Triggered', 'An event publishes', 'Decoupled automations'],
         ]},
         { t: 'callout', kind: 'tip', x: `Flow Builder is the default automation tool. "Which automation?" on the exam almost always answers "Flow" — unless the scenario is a legacy migration story.` },
         { t: 'selfcheck', q: `A flow that shows a data-entry screen to the user is a…`, a: `Screen flow. It pauses for user interaction, unlike record-triggered flows.` },
@@ -931,6 +973,18 @@ Each step publishes Data_Migration_Event__e (CREATED / PROGRESS / CLOSED) throug
         ]},
         { t: 'callout', kind: 'warn', x: `Flow Governor limit to respect: SOQL queries/DML in a flow count toward per-transaction limits; batch huge operations in Apex.` },
         { t: 'selfcheck', q: `The repo's flows call AutomationService for dates and priorities. Why split it that way?`, a: `Testability and reuse — service logic unit-tests cleanly and every flow caller shares the same math.` },
+      ]
+    },
+    {
+      title: 'The Scheduled Flow Pattern', mins: 10,
+      blocks: [
+        { t: 'p', x: `A Schedule-Triggered flow runs on a cadence — Daily, Weekly, or custom — and pairs perfectly with a service call. The repo's classic: a weekly "Stale Task Closer" that sweeps dusty Admin_Task__c records.` },
+        { t: 'code', lang: 'apex', x: `List<Admin_Task__c> staleTasks =
+    AutomationService.staleTasksToClose(openTasks, staleDays);
+// the scheduled flow then closes each one and notifies the queue owner` },
+        { t: 'callout', kind: 'tip', x: `The threshold lives in custom metadata — Admin_Configuration__mdt.Auto_Close_Stale_Days__c — so the config changes without touching flow or Apex. SecurityService already reads it when deciding stale-account sweeps.` },
+        { t: 'p', x: `Time-dependent automation is the classic "which tool" exam question. Historically the answer was Workflow Time Triggers; today a Scheduled Flow is the default answer.` },
+        { t: 'selfcheck', q: `A weekly digest job that emails a workload summary — which flow type?`, a: `Schedule-Triggered, and prefer it over Workflow Time Triggers for time-based automation.` },
       ]
     },
   ],
@@ -1032,7 +1086,8 @@ The shipped XML follows the identical skeleton — start → condition → recor
 <approvalStep>   Step_1_Security_Admin (ManagerOfRecordOwner + HierarchyToRecordOwner)
 <finalApprovalActions> -> Mark_Approved  (Approval_Status__c = Approved)
 <finalRejectionActions> -> Mark_Rejected (Approval_Status__c = Rejected)
-<recallActions>        -> Mark_Draft     (Approval_Status__c = Draft)` },
+<recallActions>        -> Mark_Draft     (Approval_Status__c = Draft)
+allowDelegate: true   -> approvers can hand off their step` },
         { t: 'selfcheck', q: `Who receives the initial submission for the Data Export Approval?`, a: `The record owner's manager, via ManagerOfRecordOwner + hierarchy approver.` },
       ]
     },
@@ -1043,6 +1098,7 @@ The shipped XML follows the identical skeleton — start → condition → recor
         { t: 'code', lang: 'text', x: `Rule "Case Queue Routing"
   entry 1: High Priority Cases  -> High Priority Case Queue (Queue)
   entry 2: Standard Cases       -> Standard Case Queue   (Queue)` },
+        { t: 'callout', kind: 'tip', x: `In Case.assignmentRules-meta.xml, entry 2 uses operation equalsNeither on Priority = High — i.e. every Case that is NOT High lands in Standard Case Queue. Both entries set assignedToType = Queue (owner-less until a member claims them).` },
         { t: 'callout', kind: 'warn', x: `Create the two queues before the rules run — an assignment rule pointing at a missing queue throws at creation time.` },
         { t: 'selfcheck', q: `How is a Queue different from a Role in assignment-rule routing?`, a: `Rules can assign to Queues (owner-less holding areas) — never to Roles.` },
       ]
@@ -1056,7 +1112,8 @@ FROM ProcessInstanceStep
 ORDER BY ProcessInstanceId DESC LIMIT 20
 
 SELECT Approval_Status__c, COUNT(Id) n FROM Case GROUP BY Approval_Status__c` },
-        { t: 'p', x: `ProcessInstance = a submission lifecycle; ProcessInstanceStep = each step. The approvals-legacy SOQL file bundles a full audit kit.` },
+        { t: 'p', x: `ProcessInstance = a submission lifecycle; ProcessInstanceStep = each step. The approvals-legacy SOQL file bundles a full audit kit: approval states by Approval_Status__c, pending submissions, who-approves-what (users with a ManagerId), and workflow-rule leftovers.` },
+        { t: 'code', lang: 'sql', x: `SELECT Name, Manager.Name FROM User WHERE ManagerId != NULL` },
         { t: 'selfcheck', q: `Which object stores each individual approval decision?`, a: `ProcessInstanceStep (StepStatus, ActorId, Comments, CompletedDate).` },
       ]
     },
@@ -1067,6 +1124,7 @@ SELECT Approval_Status__c, COUNT(Id) n FROM Case GROUP BY Approval_Status__c` },
           ['Workflow Rules', 'Read-only support', 'Prefer Flow; know email alerts & time triggers'],
           ['Process Builder', 'Grandfathered, deprecated', 'Migrate to Flow'],
           ['Approval Processes', 'Very much alive', 'Flow sets Pending, process finalizes'],
+          ['Action on Tasks/Emails', 'Some patterns remain', 'Flow is the default'],
         ]},
         { t: 'callout', kind: 'tip', x: `The composition pattern in this repo: Data_Export_Approval_Request (flow) sets Pending → the Data_Export_Approval process finalizes to Approved/Rejected.` },
         { t: 'selfcheck', q: `Which automation category is being retired, and what's its modern replacement?`, a: `Process Builder is grandfathered/deprecated — migrate to Flow Builder.` },
@@ -1215,8 +1273,11 @@ GROUP BY Forecast_Category__c` },
           ['Competitor', 'Which vendor we’re fighting'],
           ['Won Reason', 'Why the deal actually closed'],
           ['Next Step Owner', 'Who pushes it forward'],
+          ['Sensitive Data', 'Compliance marker — trips the Sensitive Data Review Task flow'],
+          ['Import Batch Number', 'Lineage back to the Phase 5 migration batch'],
           ['Approver Comments', 'Feeds the Phase 7 approval'],
         ]},
+        { t: 'callout', kind: 'tip', x: `AnalyticsService.pipelineSummary(opportunities) computes openAmount, closedWon and weighted — the exact trio the Case/Revenue dashboards chart. Run block 6 of scripts/apex/service-invocation.apex and compare the debug map to the report numbers.` },
         { t: 'selfcheck', q: `Which field type drives "why did we win"?`, a: `A picklist — Won_Reason__c on Opportunity, reportable and consistent.` },
       ]
     },
@@ -1341,7 +1402,11 @@ In Report Builder: report type Campaigns with Campaign Members, add the related 
           ['Escalation Level', 'The trigger lever for Case_Escalation_Task'],
           ['Root Cause Category', 'Why it really happened — reportable'],
           ['CSAT Score', 'Survey outcome for dashboards'],
+          ['Approval Status', 'Pending → Approved / Rejected via the Phase 7 process'],
+          ['Data Export Requested / Export Reason / Approved At', 'The Phase 7 approval-process fields'],
+          ['Queue Assignment Checked', 'Guardrail for queued ownership'],
         ]},
+        { t: 'p', x: `The Service Dashboard Stack pairs the operational view with posture and hygiene: Case_Operations_Dashboard (Open High Priority metric, Cases by Priority donut, Pending Data Exports metric), the Case_Volume_by_Priority report, and User_Security_Review_Report for reps' login posture (Phase 3).` },
         { t: 'selfcheck', q: `Which Case field tells an admin how fast the team first responded?`, a: `First_Response_Hours__c — the formula off FirstRespondedDate − CreatedDate.` },
       ]
     },
@@ -1371,8 +1436,8 @@ FROM Case WHERE First_Response_Hours__c > 4 ORDER BY First_Response_Hours__c DES
       title: 'Escalation Automation', mins: 10,
       blocks: [
         { t: 'p', x: `Case_Escalation_Task reacts when Escalation_Level__c > 1 and creates an escalation task — a faithful record-triggered flow.` },
-        { t: 'code', lang: 'sql', x: `SELECT CaseNumber, Subject, Escalation_Level__c
-FROM Case WHERE Escalation_Level__c > 1` },
+        { t: 'code', lang: 'sql', x: `SELECT CaseNumber, Subject, Escalation_Level__c, Priority, Status
+FROM Case WHERE Escalation_Level__c > 1 ORDER BY Escalation_Level__c DESC` },
         { t: 'selfcheck', q: `Which flow creates a task when a Case escalates past level one?`, a: `Case_Escalation_Task — the record-triggered flow on Case.` },
       ]
     },
@@ -1494,14 +1559,14 @@ FROM Case WHERE First_Response_Hours__c > 4`,
     {
       title: 'The Seven RoadMap Reports', mins: 12,
       blocks: [
-        { t: 'table', head: ['Report', 'Primary object', 'Ask it answers'], rows: [
-          ['Data_Quality_Score_Report', 'Account', 'Who scored below 80?'],
-          ['Case_Volume_by_Priority', 'Case', 'Volume by priority'],
-          ['Security_Audit_Status', 'Security_Audit__c', 'Open findings by risk'],
-          ['User_Security_Review_Report', 'User', 'Login posture'],
-          ['Open_Migration_Batches', 'Data_Migration_Batch__c', 'Stuck loads'],
-          ['Admin_Task_Completion', 'Admin_Task__c', 'Board health by type'],
-          ['Training_Question_Coverage', 'Training_Question__c', 'Bank gaps by topic'],
+        { t: 'table', head: ['Report', 'Format', 'Primary object', 'Ask it answers'], rows: [
+          ['Data_Quality_Score_Report', 'Summary', 'Account', 'Who scored below 80?'],
+          ['Case_Volume_by_Priority', 'Summary', 'Case', 'Volume by priority'],
+          ['Security_Audit_Status', 'Summary', 'Security_Audit__c', 'Open findings by risk'],
+          ['User_Security_Review_Report', 'Tabular', 'User', 'Login posture'],
+          ['Open_Migration_Batches', 'Summary', 'Data_Migration_Batch__c', 'Stuck loads'],
+          ['Admin_Task_Completion', 'Summary', 'Admin_Task__c', 'Board health by type'],
+          ['Training_Question_Coverage', 'Summary', 'Training_Question__c', 'Bank gaps by topic/difficulty'],
         ]},
         { t: 'code', lang: 'xml', x: `<!-- every report shares this skeleton -->
 <columns><field>ACCOUNT.NAME</field><aggregate>Grouping</aggregate></columns>
@@ -1513,10 +1578,10 @@ FROM Case WHERE First_Response_Hours__c > 4`,
       title: 'The Four Dashboards', mins: 12,
       blocks: [
         { t: 'table', head: ['Dashboard', 'Ask', 'Notable components'], rows: [
-          ['Security_Posture', 'Am I secure?', 'High Risk metric, Audits by Type bar'],
-          ['Data_Quality', 'Is my data clean?', 'Duplicates Flagged metric, Validation bar'],
-          ['Case_Operations', 'Is support healthy?', 'Open High Priority metric, Priority donut'],
-          ['Certification_Progress', 'Are learners ready?', 'On Track metric, Questions by Topic bar'],
+          ['Security_Posture', 'Am I secure?', 'High Risk Findings metric, Users Needing Review metric, Audits by Type bar'],
+          ['Data_Quality', 'Is my data clean?', 'Duplicates Flagged metric, Accounts by Validation Status bar, Needs Review metric'],
+          ['Case_Operations', 'Is support healthy?', 'Open High Priority metric, Cases by Priority donut, Pending Data Exports metric'],
+          ['Certification_Progress', 'Are learners ready?', 'Study Plans On Track metric, Learners Ready metric, Questions by Topic bar'],
         ]},
         { t: 'code', lang: 'xml', x: `<components>
   <chartType>metric</chartType>
@@ -1550,6 +1615,23 @@ ORDER BY yr, mon` },
           `Join reports only across standard objects`,
         ]},
         { t: 'selfcheck', q: `CRM dashboard that lets each viewer be the running user is…`, a: `A dynamic dashboard — each user sees the dashboard as themselves.` },
+      ]
+    },
+    {
+      title: 'Folders & Sharing', mins: 8,
+      blocks: [
+        { t: 'p', x: `Folders gate who can run reports and who can view dashboards — two separate access models.` },
+        { t: 'table', head: ['Folder type', 'What it controls', 'Trap'], rows: [
+          ['Report folder', 'Who can run/schedule reports', 'Does not control the dashboard view'],
+          ['Dashboard folder', 'Who can view shared dashboards', 'A visible dashboard still needs report access'],
+          ['Hidden', 'View-only via link/needs', 'Not browsable in the folder list'],
+        ]},
+        { t: 'list', items: [
+          `Report folders control who runs reports; dashboard folders control who views.`,
+          `Private / Public (view-all) / Hidden (view only, for the org in need) — the three visibility flavors.`,
+          `Admin_Reports and Admin_Dashboards ship public so the Academy demo works out of the box.`,
+        ]},
+        { t: 'selfcheck', q: `A dashboard shows up but the report behind it is blank to a user. Why?`, a: `Folder access is two-staged — dashboard folder allows the view, but report-folder access still gates what the components render.` },
       ]
     },
   ],
@@ -1650,16 +1732,17 @@ Dynamic dashboard = each viewer becomes the running user, so record-level securi
           ['Full', 'Production copy', '30 days', 'Dress rehearsal'],
         ]},
         { t: 'callout', kind: 'warn', x: `Never develop directly in Production. Metadata-first workflows + scratch orgs keep the release train honest.` },
+        { t: 'p', x: `Every sandbox refreshes and recovers from production — no data clone forward. Solutions you build must be data-agnostic, which is why Admin_Task__c, Data_Migration_Batch__c and the security audit objects make great sandbox UAT fixtures.` },
         { t: 'selfcheck', q: `Which sandbox type copies production data?`, a: `Full — a complete production copy, refreshed up to every 30 days.` },
       ]
     },
     {
       title: 'Deployment Paths', mins: 10,
       blocks: [
-        { t: 'table', head: ['Delivery', 'Tooling', 'Good for'], rows: [
-          ['Change Sets', 'Setup', 'Small UI-driven pushes'],
-          ['SFDX / DX', 'sf project deploy', 'Declarative + code, CI-friendly'],
-          ['Metadata API', 'CLI / scripts', 'Scripted, versioned'],
+        { t: 'table', head: ['Delivery', 'Tooling', 'Good for', 'Watch out'], rows: [
+          ['Change Sets', 'Setup', 'Small UI-driven pushes', 'Non-transactional, no rollback granularity'],
+          ['SFDX / DX', 'sf project deploy', 'Declarative + code, CI-friendly', 'Requires source-tracked project'],
+          ['Metadata API', 'sf force mdapi', 'Scripted, versioned', 'Higher learning curve'],
         ]},
         { t: 'callout', kind: 'tip', x: `The exam duality: outbound change sets from a sandbox, inbound into another. Git + CLI deployments are the modern admin skill layered on top.` },
         { t: 'selfcheck', q: `In this repo, how would you dry-run a deployment?`, a: `sf project deploy start --check-only against a scratch org — no metadata hits production.` },
@@ -1804,6 +1887,7 @@ Deploy + verify: rerun without --check-only, then the smoke query above. Close t
           ['Passing', '~65%'],
           ['Cost', '~$200'],
           ['Registration', 'webassessor.com'],
+          ['Delivery', 'In-person or online proctored'],
         ]},
         { t: 'callout', kind: 'tip', x: `Registration flow: create your Trailhead profile → register on webassessor.com → schedule a proctored slot.` },
         { t: 'selfcheck', q: `Where do you register for the Administrator exam?`, a: `webassessor.com — using your Trailhead profile credentials.` },
@@ -1861,11 +1945,27 @@ Map<String, Integer> mix = CertificationPrepService.questionMix(bank);` },
           `Study by domain — revisit the weak phases`,
           `Mock weekly — recordQuizResult tracks it`,
           `Pressure drill — 100 questions in 90 minutes`,
-          `Register — webassessor.com, book the slot`,
+          `Trailhead + Trailmix — pair every guide with the official hands-on orgs`,
+          `Book it — webassessor.com; bring two IDs; read the proctor email`,
         ]},
         { t: 'code', lang: 'apex', x: `CertificationPrepService.buildQuiz(
     [SELECT Id FROM Training_Question__c], 10)` },
         { t: 'selfcheck', q: `What is the deterministic advantage of buildQuiz?`, a: `Same bank + same size → same quiz — reproducible flaky-pick debugging in QA.` },
+      ]
+    },
+    {
+      title: 'What the Exam Wants vs What the RoadMap Gives You', mins: 10,
+      blocks: [
+        { t: 'table', head: ['Exam wants', 'Where the RoadMap owns the answer'], rows: [
+          ['Sharing design questions (profiles/PS/OWD/rules)', 'Phase 3 — Security Model'],
+          ['Automation-by-tool (which tool for which job)', 'Phases 6–7 — Flow-first, legacy-aware'],
+          ['Field/object vocabulary (__c, master-detail, validation)', 'Phases 1–2 — Fundamentals + Data Model'],
+          ['Data mechanics (upsert/external IDs, duplicate merging)', 'Phase 5 — Data Management'],
+          ['Analytics prims (formats, folders, bucket fields)', 'Phase 10 — Analytics'],
+          ['Release mechanics (sandboxes, deployments)', 'Phase 11 — Sandboxes & Release Mgmt'],
+        ]},
+        { t: 'callout', kind: 'tip', x: `Every chapter in the docs SPA links straight back to the phase guide that owns the answer — weak phase, revisit the phase, re-quiz, move on.` },
+        { t: 'selfcheck', q: `A scenario about sharing rules and OWD maps to which phase?`, a: `Phase 3 — Security Model — profiles, permission sets, OWD and sharing rules all live there.` },
       ]
     },
   ],

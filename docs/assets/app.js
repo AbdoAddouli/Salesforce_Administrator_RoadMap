@@ -74,6 +74,7 @@ function navigate(view, mid, li, scrollTo) {
 }
 function hashFor() {
   if (route.view === 'phase') return '/phase/' + route.mid;
+  if (route.view === 'chapter') return '/chapter/' + route.mid;
   if (route.view === 'lesson') return '/lesson/' + route.mid + '/' + route.li;
   if (route.view === 'quiz')  return '/quiz/' + route.mid;
   return '/';
@@ -82,6 +83,7 @@ function parseHash() {
   const h = decodeURIComponent((location.hash || '#/').replace(/^#/, ''));
   const parts = h.split('/').filter(Boolean);
   if (parts[0] === 'phase') return { view: 'phase', mid: parts[1] };
+  if (parts[0] === 'chapter') return { view: 'chapter', mid: parts[1] };
   if (parts[0] === 'lesson') return { view: 'lesson', mid: parts[1], li: Number(parts[2]) };
   if (parts[0] === 'quiz')   return { view: 'quiz', mid: parts[1] };
   return { view: 'home' };
@@ -107,6 +109,7 @@ function render() {
   bindTopSearch();
 
   if (r.view === 'phase')  { renderModule(mod); finishRender(); return; }
+  if (r.view === 'chapter') { renderChapter(mod); finishRender(); return; }
   if (r.view === 'lesson') { renderLesson(mod, Math.min(Number(r.li) || 0, mod.lessons.length - 1)); finishRender(); return; }
   if (r.view === 'quiz')   { renderQuiz(mod); finishRender(); return; }
   renderHome();
@@ -304,7 +307,8 @@ function renderModule(mod) {
           <span>${store.quiz[mod.id] ? '✓ quiz taken' : 'quiz pending'}</span>
         </div>
         <a class="btn ghost sm" target="_blank" rel="noopener"
-           href="${GUIDE}${mod.guide}">📄 Full guide on GitHub</a>
+           href="${GUIDE}${mod.guide}">📄 Source guide (GitHub)</a>
+        <button class="btn primary sm" id="readChapter" style="width:100%;margin-top:8px">📖 Read the full chapter here →</button>
         <button class="btn ghost sm" id="jumpEx" style="width:100%;margin-top:8px">🧪 Exercises &amp; Mini Projects</button>
       </div>
     </div>
@@ -359,7 +363,58 @@ function renderModule(mod) {
 
   const jumpEx = $('#jumpEx');
   if (jumpEx) jumpEx.addEventListener('click', () => scrollToId('exercises'));
+  const readChapter = $('#readChapter');
+  if (readChapter) readChapter.addEventListener('click', () => navigate('chapter', mod.id));
   wireExercises();
+}
+
+/* ------------------------- full chapter (one-page course) ------------------------- */
+
+function renderChapter(mod) {
+  const p = moduleProgress(mod.id);
+  view.innerHTML = `
+    <div class="crumb reveal"><a href="#/">Dashboard</a> <span>›</span> <a href="#/phase/${mod.id}">${mod.title}</a> <span>›</span> <b>Full chapter</b></div>
+
+    <div class="chapter-hero reveal" style="--c:${mod.color}">
+      <div class="ph-ico">${mod.icon}</div>
+      <div class="ph-body">
+        <div class="ph-kicker">Phase ${String(mod.n).padStart(2, '0')} · ${mod.tagline}</div>
+        <h1>${mod.title}</h1>
+        <p class="chapter-note">The complete phase, all ${mod.lessons.length} lessons in one continuous page — this is the whole course content, no external link needed.</p>
+        <div class="ph-obj"><span>By the end you can:</span>
+          <ul>${mod.objectives.map(o => `<li>${esc(o)}</li>`).join('')}</ul>
+        </div>
+      </div>
+      <div class="ph-side">
+        <div class="ring sm" style="--p:${p.pct};--c:${mod.color}"><span>${p.pct}<small>%</small></span></div>
+        <a class="btn primary sm" href="#/lesson/${mod.id}/0">Study lesson by lesson →</a>
+      </div>
+    </div>
+
+    <nav class="chapter-toc reveal">
+      ${mod.lessons.map((l, i) => `<button type="button" class="chtoc-item" data-scroll="lesson-${i}" style="--c:${mod.color}">
+        <span class="chtoc-n">${String(i + 1).padStart(2, '0')}</span>
+        <span>${esc(l.title)}</span><span class="chapter-min">${l.mins}′</span></button>`).join('')}
+    </nav>
+
+    <div class="chapter-body reveal">
+      ${mod.lessons.map((l, i) => `
+        <article class="lesson article" id="lesson-${i}">
+          <div class="lesson-head" style="--c:${mod.color}">
+            <div class="lh-meta">Phase ${String(mod.n).padStart(2, '0')} · Lesson ${i + 1} of ${mod.lessons.length} · ${l.mins} min</div>
+            <h1>${esc(l.title)}</h1>
+          </div>
+          <div class="blocks">${l.blocks.map(renderBlock).join('')}</div>
+        </article>`).join('')}
+    </div>
+
+    <div class="chapter-end reveal" style="--c:${mod.color}">
+      <h3>Finished the chapter 🎉</h3>
+      <p>Now prove it: run the exercises and take the module quiz.</p>
+      <a class="btn primary" href="#/quiz/${mod.id}">🧠 Take the module quiz</a>
+    </div>`;
+
+  $$('.chtoc-item').forEach(a => a.addEventListener('click', () => scrollToId(a.dataset.scroll)));
 }
 
 function wireExercises() {
@@ -423,6 +478,9 @@ function renderLesson(mod, li) {
         </a>
         <a href="#/phase/${mod.id}" class="toc-item toc-ex" style="--c:${mod.color}">
           <span class="toc-state">🧪</span><span>Exercises &amp; Mini Projects</span>
+        </a>
+        <a href="#/chapter/${mod.id}" class="toc-item toc-cht" style="--c:${mod.color}">
+          <span class="toc-state">📖</span><span>Full chapter on one page</span>
         </a>
       </aside>
 
